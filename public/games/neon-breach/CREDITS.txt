@@ -1,0 +1,3 @@
+Neon Breach - MIT License, (c) 2026 wuisabel-gif (see LICENSE).
+Sound effects: Kenney (kenney.nl) Sci-fi Sounds, Impact Sounds and Interface Sounds, released under CC0.
+Background music and the original custom font were left out of this copy.

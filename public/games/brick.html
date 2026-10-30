@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Brick Blitz</title>
+<style>
+  html,body{margin:0;height:100%;background:#191537;display:grid;place-items:center;font-family:system-ui,sans-serif}
+  canvas{max-width:96vw;max-height:96vh;border-radius:14px;touch-action:none;background:#1f1a44}
+</style>
+</head>
+<body>
+<canvas id="c" width="480" height="620"></canvas>
+<script>
+(function(){
+  var P = new URLSearchParams(location.search);
+  var ACCENT = P.get('c') || '#FF5D8F';
+  var cv = document.getElementById('c');
+  var x = cv.getContext('2d');
+  var W = cv.width, H = cv.height;
+  var COLS = 8, ROWS = 5, M = 26, GAPB = 7;
+  var BW = (W - 2*M - (COLS-1)*GAPB) / COLS, BH = 22;
+  var COLORS = ['#FF5D8F', '#FFB938', '#18C29C', '#6C3BFF', '#0EA5E9'];
+  var pad, ball, bricks, lives, score, running, over, msg;
+
+  function reset(full){
+    pad = { w: 92, x: W/2 - 46, y: H - 42 };
+    ball = { x: W/2, y: pad.y - 12, vx: 0, vy: 0, r: 8, stuck: true };
+    if (full){
+      bricks = [];
+      for (var r=0;r<ROWS;r++) for (var c=0;c<COLS;c++)
+        bricks.push({ x: M + c*(BW+GAPB), y: 70 + r*(BH+GAPB), alive: true, col: COLORS[r % COLORS.length] });
+      lives = 3; score = 0; over = false; msg = '';
+    }
+    running = false;
+  }
+
+  function launch(){
+    if (over){ reset(true); reset(false); return; }
+    if (ball.stuck){
+      ball.stuck = false;
+      var a = -Math.PI/3 - Math.random()*Math.PI/3;
+      ball.vx = 4.6*Math.cos(a); ball.vy = 4.6*Math.sin(a);
+      running = true;
+    }
+  }
+
+  function update(){
+    if (running && !over){
+      if (ball.stuck){
+        ball.x = pad.x + pad.w/2; ball.y = pad.y - 12;
+      } else {
+        ball.x += ball.vx; ball.y += ball.vy;
+        if (ball.x < ball.r || ball.x > W - ball.r){ ball.vx *= -1; ball.x = Math.max(ball.r, Math.min(W-ball.r, ball.x)); }
+        if (ball.y < ball.r){ ball.vy *= -1; ball.y = ball.r; }
+        // paddle
+        if (ball.vy > 0 && ball.y + ball.r >= pad.y && ball.y + ball.r <= pad.y + 14 &&
+            ball.x >= pad.x - 4 && ball.x <= pad.x + pad.w + 4){
+          var hit = (ball.x - (pad.x + pad.w/2)) / (pad.w/2);
+          var sp = Math.min(8, Math.hypot(ball.vx, ball.vy) + 0.15);
+          var ang = hit * (Math.PI/3); // 0 = straight up, ±60° at paddle edges
+          ball.vx = sp*Math.sin(ang);
+          ball.vy = -sp*Math.cos(ang);
+          ball.y = pad.y - ball.r - 1;
+        }
+        // bricks
+        for (var i=0;i<bricks.length;i++){
+          var b = bricks[i];
+          if (!b.alive) continue;
+          if (ball.x + ball.r > b.x && ball.x - ball.r < b.x + BW &&
+              ball.y + ball.r > b.y && ball.y - ball.r < b.y + BH){
+            b.alive = false; score += 10;
+            var fromSide = ball.x < b.x || ball.x > b.x + BW;
+            if (fromSide) ball.vx *= -1; else ball.vy *= -1;
+            break;
+          }
+        }
+        if (bricks.every(function(b){ return !b.alive; })){
+          over = true; msg = 'You cleared it! Score ' + score;
+        }
+        if (ball.y > H + 20){
+          lives--;
+          if (lives <= 0){ over = true; msg = 'Game over — score ' + score; }
+          else reset(false), running = true, ball.stuck = true;
+        }
+      }
+    }
+    draw();
+    requestAnimationFrame(update);
+  }
+
+  function draw(){
+    x.clearRect(0,0,W,H);
+    for (var i=0;i<bricks.length;i++){
+      var b = bricks[i];
+      if (!b.alive) continue;
+      x.fillStyle = b.col;
+      x.beginPath();
+      var r=6, px=b.x, py=b.y;
+      x.moveTo(px+r,py);
+      x.arcTo(px+BW,py,px+BW,py+BH,r);
+      x.arcTo(px+BW,py+BH,px,py+BH,r);
+      x.arcTo(px,py+BH,px,py,r);
+      x.arcTo(px,py,px+BW,py,r);
+      x.fill();
+    }
+    // paddle
+    x.fillStyle = ACCENT;
+    x.beginPath();
+    var r2=9;
+    x.moveTo(pad.x+r2,pad.y);
+    x.arcTo(pad.x+pad.w,pad.y,pad.x+pad.w,pad.y+16,r2);
+    x.arcTo(pad.x+pad.w,pad.y+16,pad.x,pad.y+16,r2);
+    x.arcTo(pad.x,pad.y+16,pad.x,pad.y,r2);
+    x.arcTo(pad.x,pad.y,pad.x+pad.w,pad.y,r2);
+    x.fill();
+    // ball
+    x.fillStyle = '#fff';
+    x.beginPath(); x.arc(ball.x, ball.y, ball.r, 0, Math.PI*2); x.fill();
+    // hud
+    x.fillStyle='#fff'; x.font='bold 20px system-ui,sans-serif'; x.textAlign='left';
+    x.fillText('Score ' + score, 12, 30);
+    x.textAlign='right';
+    x.fillText('♥'.repeat(Math.max(0,lives)), W-12, 30);
+    if (!running || over || ball.stuck){
+      x.fillStyle='rgba(20,14,50,0.72)'; x.fillRect(0,0,W,H);
+      x.fillStyle='#fff'; x.textAlign='center';
+      x.font='bold 24px system-ui,sans-serif';
+      x.fillText(over ? msg : 'Tap / Space to launch', W/2, H/2 - 12);
+      x.font='15px system-ui,sans-serif'; x.fillStyle='rgba(255,255,255,0.7)';
+      x.fillText(over ? 'Tap to play again' : 'Move: mouse, touch, or ← →', W/2, H/2 + 20);
+    }
+  }
+
+  function movePad(clientX){
+    var rect = cv.getBoundingClientRect();
+    var scale = W / rect.width;
+    var mx = (clientX - rect.left) * scale;
+    pad.x = Math.max(0, Math.min(W - pad.w, mx - pad.w/2));
+    if (ball.stuck){ ball.x = pad.x + pad.w/2; }
+  }
+
+  cv.addEventListener('pointermove', function(e){ movePad(e.clientX); });
+  cv.addEventListener('pointerdown', function(e){ e.preventDefault(); movePad(e.clientX); launch(); });
+  window.addEventListener('keydown', function(e){
+    if (e.code === 'Space'){ e.preventDefault(); launch(); }
+    if (e.code === 'ArrowLeft'){ pad.x = Math.max(0, pad.x - 26); if (ball.stuck) ball.x = pad.x + pad.w/2; }
+    if (e.code === 'ArrowRight'){ pad.x = Math.min(W - pad.w, pad.x + 26); if (ball.stuck) ball.x = pad.x + pad.w/2; }
+  });
+
+  reset(true);
+  reset(false);
+  running = true; ball.stuck = true;
+  update();
+})();
+</script>
+</body>
+</html>

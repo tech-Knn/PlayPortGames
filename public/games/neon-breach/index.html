@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Neon Breach</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="game-shell" aria-label="Neon Breach arena">
+    <canvas id="game" width="1280" height="720"></canvas>
+
+    <section class="hud-layer" aria-label="Combat HUD">
+      <aside class="hud-column hud-left">
+        <article class="hud-panel player-panel">
+          <div class="avatar-ring">
+            <img class="avatar-core" src="assets/ui/panels/player-avatar-frame.png" alt="" aria-hidden="true">
+          </div>
+          <div class="player-readout">
+            <div class="panel-title">Player</div>
+            <div class="bar health-bar" aria-label="Health">
+              <span id="healthFill"></span>
+            </div>
+            <div class="readout-row">
+              <strong id="healthValue">100/100</strong>
+              <span id="levelValue">LVL 1</span>
+            </div>
+            <div class="bar shield-bar" aria-label="Shield">
+              <span></span>
+            </div>
+          </div>
+        </article>
+
+        <article class="hud-panel weapons-panel">
+          <div class="panel-title">Weapons</div>
+          <div id="weaponList" class="weapon-list"></div>
+        </article>
+
+        <article class="hud-panel stats-panel">
+          <div class="panel-title">Stats</div>
+          <dl class="stats-grid">
+            <div><dt>Damage</dt><dd id="damageStat">25</dd></div>
+            <div><dt>Fire Rate</dt><dd id="fireRateStat">6.3/s</dd></div>
+            <div><dt>Speed</dt><dd id="speedStat">270</dd></div>
+            <div><dt>Crit Chance</dt><dd id="critStat">15%</dd></div>
+            <div><dt>Max Health</dt><dd id="maxHealthStat">100</dd></div>
+          </dl>
+        </article>
+      </aside>
+
+      <header class="wave-banner">
+        <strong id="waveValue">Wave 1</strong>
+        <span id="enemiesValue">Enemies left: 10</span>
+      </header>
+
+      <aside class="hud-column hud-right">
+        <article class="hud-panel currency-panel">
+          <img class="coin-icon" src="assets/ui/icons/system/currency_coin.png" alt="" aria-hidden="true">
+          <div class="resource-readout">
+            <strong id="currencyValue">0</strong>
+            <span id="scoreValue">Score 0</span>
+          </div>
+          <button class="gear-button" type="button" aria-label="Settings">
+            <img src="assets/ui/icons/system/settings_gear.png" alt="" aria-hidden="true">
+          </button>
+        </article>
+
+        <article class="hud-panel radar-panel">
+          <canvas id="radar" width="220" height="160" aria-label="Radar"></canvas>
+        </article>
+
+        <article class="hud-panel objective-panel">
+          <div>
+            <div class="panel-title">Objective</div>
+            <p id="objectiveText">Survive the wave</p>
+          </div>
+          <span id="objectiveCheck" class="objective-check" aria-hidden="true"></span>
+        </article>
+
+        <article class="hud-panel perks-panel">
+          <div class="panel-title">Perks</div>
+          <div id="perkList" class="perk-list"></div>
+        </article>
+      </aside>
+
+      <footer class="bottom-hud">
+        <div class="xp-strip">
+          <span>XP</span>
+          <div class="bar xp-bar"><span id="xpFill"></span></div>
+          <strong id="xpValue">0 / 100</strong>
+        </div>
+
+        <div class="ability-dock">
+          <button class="ability-card" type="button" aria-label="Shield charge">
+            <img class="ability-icon" src="assets/ui/icons/abilities/shield_charge.png" alt="" aria-hidden="true">
+            <strong id="shieldCount">2</strong>
+          </button>
+          <button class="ability-card" type="button" aria-label="Med kit">
+            <img class="ability-icon" src="assets/ui/icons/abilities/med_kit.png" alt="" aria-hidden="true">
+            <strong id="medCount">1</strong>
+          </button>
+          <button class="ability-card" type="button" aria-label="Overcharge">
+            <img class="ability-icon" src="assets/ui/icons/abilities/overcharge.png" alt="" aria-hidden="true">
+            <strong id="chargeCount">1</strong>
+          </button>
+          <button class="ability-card locked" type="button" aria-label="Locked ability">
+            <img class="ability-icon" src="assets/ui/icons/abilities/locked.png" alt="" aria-hidden="true">
+          </button>
+        </div>
+      </footer>
+
+      <div class="mobile-controls" aria-hidden="true">
+        <div class="stick"><span></span></div>
+        <button class="shoot-button" type="button" tabindex="-1">Shoot</button>
+        <button class="dash-button" type="button" tabindex="-1">Dash</button>
+      </div>
+    </section>
+
+    <section id="pilotSelect" class="pilot-select" aria-label="Choose your pilot">
+      <div class="pilot-select-panel">
+        <div class="pilot-select-header">
+          <span>Neon Breach</span>
+          <h1>Choose Pilot</h1>
+        </div>
+
+        <div id="pilotCardList" class="pilot-card-list"></div>
+
+        <button id="confirmPilot" class="confirm-pilot" type="button">Deploy</button>
+      </div>
+    </section>
+
+    <section id="orientationGuard" class="orientation-guard hidden" aria-live="polite" aria-label="Rotate device notice">
+      <div class="orientation-card">
+        <div class="orientation-phone" aria-hidden="true">
+          <span></span>
+        </div>
+        <strong>Rotate To Landscape</strong>
+        <p>Neon Breach plays in horizontal mode on phones.</p>
+      </div>
+    </section>
+
+    <footer class="site-credit" aria-label="Copyright">
+      <span>MIT licensed</span>
+      <a href="https://github.com/wuisabel-gif" target="_blank" rel="noopener noreferrer">wuisabel-gif</a>
+    </footer>
+  </main>
+
+  <script src="game.js"></script>
+</body>
+</html>

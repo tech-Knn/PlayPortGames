@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Serpent Snack</title>
+<style>
+  html,body{margin:0;height:100%;background:#191537;display:grid;place-items:center;font-family:system-ui,sans-serif}
+  canvas{max-width:96vw;max-height:96vh;border-radius:14px;touch-action:none;background:#1f1a44}
+</style>
+</head>
+<body>
+<canvas id="c" width="480" height="480"></canvas>
+<script>
+(function(){
+  var P = new URLSearchParams(location.search);
+  var FOOD = P.get('e') || '🍎';
+  var ACCENT = P.get('c') || '#18C29C';
+  var cv = document.getElementById('c');
+  var x = cv.getContext('2d');
+  var N = 20, S = cv.width / N;
+  var snake, dir, pend, food, score, best = 0, dead, started, timer = null;
+
+  function reset(){
+    snake = [{x:10,y:10},{x:9,y:10},{x:8,y:10}];
+    dir = {x:1,y:0}; pend = dir;
+    score = 0; dead = false; started = false;
+    placeFood(); draw();
+  }
+
+  function placeFood(){
+    do {
+      food = { x: Math.floor(Math.random()*N), y: Math.floor(Math.random()*N) };
+    } while (snake.some(function(s){ return s.x===food.x && s.y===food.y; }));
+  }
+
+  function start(){
+    if (started) return;
+    started = true;
+    timer = setInterval(step, 110);
+  }
+
+  function step(){
+    dir = pend;
+    var h = { x:(snake[0].x+dir.x+N)%N, y:(snake[0].y+dir.y+N)%N };
+    if (snake.some(function(s){ return s.x===h.x && s.y===h.y; })){
+      dead = true; started = false;
+      clearInterval(timer);
+      if (score > best) best = score;
+      draw(); return;
+    }
+    snake.unshift(h);
+    if (h.x===food.x && h.y===food.y){ score++; placeFood(); }
+    else snake.pop();
+    draw();
+  }
+
+  function setDir(d){
+    if (d.x === -dir.x && d.y === -dir.y) return; // no instant reverse
+    pend = d;
+    start();
+  }
+
+  function draw(){
+    x.clearRect(0,0,cv.width,cv.height);
+    // subtle grid
+    x.fillStyle = 'rgba(255,255,255,0.03)';
+    for (var i=0;i<N;i++) for (var j=0;j<N;j++)
+      if ((i+j)%2===0) x.fillRect(i*S, j*S, S, S);
+    // food
+    x.font = (S*0.8) + 'px serif';
+    x.textAlign='center'; x.textBaseline='middle';
+    x.fillText(FOOD, food.x*S + S/2, food.y*S + S/2 + 1);
+    // snake
+    for (var k=0;k<snake.length;k++){
+      var seg = snake[k];
+      x.fillStyle = k===0 ? '#FFB938' : ACCENT;
+      x.beginPath();
+      var r = 6, px = seg.x*S+2, py = seg.y*S+2, w = S-4, h2 = S-4;
+      x.moveTo(px+r,py);
+      x.arcTo(px+w,py,px+w,py+h2,r);
+      x.arcTo(px+w,py+h2,px,py+h2,r);
+      x.arcTo(px,py+h2,px,py,r);
+      x.arcTo(px,py,px+w,py,r);
+      x.fill();
+    }
+    // score
+    x.fillStyle='#fff'; x.font='bold 22px system-ui,sans-serif'; x.textAlign='left';
+    x.fillText('Score ' + score, 12, 24);
+    if (!started){
+      x.fillStyle='rgba(20,14,50,0.72)';
+      x.fillRect(0,0,cv.width,cv.height);
+      x.fillStyle='#fff'; x.textAlign='center';
+      x.font='bold 24px system-ui,sans-serif';
+      x.fillText(dead ? 'Game over — score ' + score + ' (best ' + best + ')' : 'Arrows / WASD or swipe to move', cv.width/2, cv.height/2 - 14);
+      x.font='15px system-ui,sans-serif';
+      x.fillStyle='rgba(255,255,255,0.7)';
+      x.fillText(dead ? 'Move to play again' : 'Eat to grow. Walls wrap around.', cv.width/2, cv.height/2 + 18);
+      if (dead){ snake=[{x:10,y:10},{x:9,y:10},{x:8,y:10}]; dir={x:1,y:0}; pend=dir; score=0; dead=false; placeFood(); }
+    }
+  }
+
+  var KEYS = {
+    ArrowUp:{x:0,y:-1}, ArrowDown:{x:0,y:1}, ArrowLeft:{x:-1,y:0}, ArrowRight:{x:1,y:0},
+    KeyW:{x:0,y:-1}, KeyS:{x:0,y:1}, KeyA:{x:-1,y:0}, KeyD:{x:1,y:0}
+  };
+  window.addEventListener('keydown', function(e){
+    var d = KEYS[e.code];
+    if (d){ e.preventDefault(); setDir(d); }
+  });
+
+  var t0 = null;
+  cv.addEventListener('pointerdown', function(e){ t0 = {x:e.clientX, y:e.clientY}; });
+  cv.addEventListener('pointerup', function(e){
+    if (!t0) return;
+    var dx = e.clientX - t0.x, dy = e.clientY - t0.y;
+    t0 = null;
+    if (Math.abs(dx) < 18 && Math.abs(dy) < 18){ start(); return; }
+    if (Math.abs(dx) > Math.abs(dy)) setDir({x: dx>0?1:-1, y:0});
+    else setDir({x:0, y: dy>0?1:-1});
+  });
+
+  reset();
+})();
+</script>
+</body>
+</html>

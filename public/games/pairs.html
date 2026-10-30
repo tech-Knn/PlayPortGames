@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Match Pairs</title>
+<style>
+  html,body{margin:0;min-height:100%;background:#191537;font-family:system-ui,sans-serif;color:#fff}
+  .wrap{min-height:100vh;display:grid;place-items:center;padding:14px;box-sizing:border-box}
+  .hud{display:flex;justify-content:space-between;align-items:center;width:min(92vw,460px);margin-bottom:12px;font-weight:700}
+  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;width:min(92vw,460px)}
+  .tile{aspect-ratio:1;border:none;border-radius:14px;font-size:clamp(1.6rem,7vw,2.4rem);cursor:pointer;
+        background:var(--accent);display:grid;place-items:center;transition:transform .12s ease,background .15s ease;color:#fff}
+  .tile:hover{transform:scale(1.05)}
+  .tile.open{background:#2c2560}
+  .tile.done{background:#18C29C;cursor:default}
+  .btn{margin-top:14px;border:none;border-radius:999px;padding:10px 26px;font-weight:800;font-size:1rem;
+       background:#FFB938;color:#241E4E;cursor:pointer}
+  .msg{margin-top:12px;font-weight:700;min-height:1.4em}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div>
+    <div class="hud"><span id="title">Match Pairs</span><span>Moves: <span id="moves">0</span></span></div>
+    <div class="grid" id="grid"></div>
+    <div class="msg" id="msg"></div>
+    <button class="btn" id="again" hidden>Play again</button>
+  </div>
+</div>
+<script>
+(function(){
+  var P = new URLSearchParams(location.search);
+  var SETS = {
+    animals: ['🐶','🐱','🦊','🐼','🐸','🦁','🐷','🐵'],
+    flowers: ['🌸','🌷','🌻','🌼','🌹','💐','🌺','🍀'],
+    fruit:   ['🍎','🍇','🍉','🍓','🍍','🥝','🍑','🍒'],
+    shapes:  ['🔺','🔵','🟩','🟨','💠','🔶','🟣','⭐'],
+    glam:    ['💄','👗','💍','👠','🎀','👜','🕶️','💅']
+  };
+  var set = SETS[P.get('set')] || SETS.animals;
+  var ACCENT = P.get('c') || '#6C3BFF';
+  document.documentElement.style.setProperty('--accent', ACCENT);
+
+  var grid = document.getElementById('grid');
+  var movesEl = document.getElementById('moves');
+  var msg = document.getElementById('msg');
+  var again = document.getElementById('again');
+  var open = [], lock = false, moves = 0, matched = 0;
+
+  function shuffle(a){
+    for (var i=a.length-1;i>0;i--){
+      var j = Math.floor(Math.random()*(i+1));
+      var t = a[i]; a[i]=a[j]; a[j]=t;
+    }
+    return a;
+  }
+
+  function build(){
+    grid.innerHTML = '';
+    open = []; lock = false; moves = 0; matched = 0;
+    movesEl.textContent = '0';
+    msg.textContent = '';
+    again.hidden = true;
+    var deck = shuffle(set.concat(set).slice());
+    deck.forEach(function(emo){
+      var b = document.createElement('button');
+      b.className = 'tile';
+      b.setAttribute('aria-label','hidden tile');
+      b.dataset.v = emo;
+      b.textContent = '';
+      b.addEventListener('click', function(){ flip(b); });
+      grid.appendChild(b);
+    });
+  }
+
+  function flip(b){
+    if (lock || b.classList.contains('open') || b.classList.contains('done')) return;
+    b.classList.add('open');
+    b.textContent = b.dataset.v;
+    open.push(b);
+    if (open.length === 2){
+      moves++; movesEl.textContent = String(moves);
+      lock = true;
+      var a = open[0], c = open[1];
+      if (a.dataset.v === c.dataset.v){
+        setTimeout(function(){
+          a.classList.remove('open'); c.classList.remove('open');
+          a.classList.add('done'); c.classList.add('done');
+          open = []; lock = false;
+          matched++;
+          if (matched === set.length){
+            msg.textContent = '🎉 Cleared in ' + moves + ' moves!';
+            again.hidden = false;
+          }
+        }, 300);
+      } else {
+        setTimeout(function(){
+          a.classList.remove('open'); c.classList.remove('open');
+          a.textContent = ''; c.textContent = '';
+          open = []; lock = false;
+        }, 650);
+      }
+    }
+  }
+
+  again.addEventListener('click', build);
+  build();
+})();
+</script>
+</body>
+</html>

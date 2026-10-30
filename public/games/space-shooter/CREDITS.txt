@@ -1,0 +1,6 @@
+Generic Space Shooter
+Code: MIT, (c) 2019 Jafnee Jesmee (see LICENSE). Libraries: RequireJS, Mousetrap, Howler.js.
+Ships, power-ups, lasers: Kenney "Space Shooter Redux", CC0 (www.kenney.nl) (see images/KENNEY-LICENSE-CC0.txt).
+Sound effects: Kenney (CC0) and sfxr-generated clips from the original project.
+Menu buttons, logo, menu panel, help screen, explosion sprite sheet and background music
+were created from scratch for Playport. The in-game logo/button text uses Poppins (SIL OFL 1.1).

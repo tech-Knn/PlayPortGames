@@ -1,0 +1,1937 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Pitch Duel</title>
+<meta name="theme-color" content="#0e1a14">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Pitch Duel">
+<meta name="description" content="Pitch Duel: a football game. Dribble, tackle, shoot past the keeper and win the penalty shoot-out, for two players or you against a bot.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Barlow+Condensed:wght@500;600;700&display=swap">
+<style>
+/* Layout: one full-bleed stadium canvas, camera on the ball; menus float over a live bot-vs-bot match */
+:root{
+  --hall:#0e1a14;
+  --panel:rgba(12,20,16,.92);
+  --line:rgba(236,244,238,.16);
+  --chalk:#eef4f0;
+  --muted:#a3b5aa;
+  --home:#e8343c;
+  --away:#5aaee6;
+  --grass:#3fae4f;
+  --led:#ffd257;
+  --display:"Bungee","Impact","Arial Black",sans-serif;
+  --body:"Barlow Condensed","Arial Narrow","Roboto Condensed",system-ui,sans-serif;
+  color-scheme:dark;
+}
+html{height:100%;box-sizing:border-box}
+body{height:100%;background:var(--hall);color:var(--chalk);font-family:var(--body);font-size:17px;overflow:hidden;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none}
+*,*::before,*::after{box-sizing:border-box}
+#stage{position:relative;width:100%;height:100%;overflow:hidden;touch-action:none}
+#cv{display:block;width:100%;height:100%}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible{outline:3px solid var(--led);outline-offset:2px}
+
+.overlay{position:absolute;inset:0;display:grid;place-items:center;padding:16px;overflow:auto;background:radial-gradient(ellipse at center,rgba(14,26,20,.35),rgba(14,26,20,.78))}
+.panel{width:min(540px,100%);background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;display:grid;gap:16px;box-shadow:0 24px 70px rgba(0,0,0,.55);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.eyebrow{font-size:14px;letter-spacing:.18em;text-transform:uppercase;color:var(--led);font-weight:700}
+h1,h2{font-family:var(--display);font-weight:400;margin:0;line-height:.95;text-wrap:balance}
+h1{font-size:clamp(40px,8vw,60px)}
+h1 .w{color:var(--home)} h1 .b{color:var(--away)}
+h2{font-size:clamp(28px,6vw,40px)}
+.sub{margin:6px 0 0;color:var(--muted);line-height:1.35;max-width:48ch}
+.field{display:grid;gap:8px}
+.label{font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg button{flex:1 1 0;min-width:84px;padding:10px 12px;border-radius:9px;border:1px solid var(--line);background:rgba(236,244,240,.06);font-weight:600;font-size:18px;letter-spacing:.02em}
+.seg button:hover{background:rgba(236,244,240,.12)}
+.seg button[aria-pressed="true"]{background:var(--chalk);color:var(--hall);border-color:var(--chalk)}
+.wdesc{margin:0;font-size:15px;color:var(--muted);line-height:1.35;min-height:2.7em}
+.play{font-family:var(--display);font-size:24px;background:var(--grass);color:#08200d;border:0;border-radius:10px;padding:14px 18px;box-shadow:0 6px 0 #227a30;transition:transform .08s,box-shadow .08s}
+.play:active{transform:translateY(4px);box-shadow:0 2px 0 #227a30}
+.ghost{background:transparent;border:1px solid var(--line);border-radius:10px;padding:12px 16px;font-weight:600;font-size:18px}
+.ghost:hover{background:rgba(236,244,240,.08)}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.row>*{flex:1 1 140px}
+.keys{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;font-size:16px;color:var(--muted);line-height:1.5}
+.keys b{color:var(--chalk);font-weight:700;letter-spacing:.06em;text-transform:uppercase;font-size:13px;display:block}
+.keys .t1 b{color:var(--home)} .keys .t2 b{color:var(--away)}
+kbd{font-family:var(--body);font-weight:700;color:var(--chalk);background:rgba(236,244,240,.1);border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:0 6px;font-size:15px}
+.final{display:flex;align-items:center;justify-content:center;gap:18px;font-family:var(--display);font-size:46px;font-variant-numeric:tabular-nums}
+.final .s1{color:var(--home)} .final .s2{color:var(--away)} .final .dash{color:var(--muted);font-size:30px}
+.center{text-align:center}
+.credits{margin:0;font-size:14px;color:var(--muted);line-height:1.45;border-top:1px solid var(--line);padding-top:12px}
+.credits a{color:var(--chalk);text-decoration:underline;text-decoration-color:rgba(236,244,240,.35);text-underline-offset:2px}
+.credits a:hover{text-decoration-color:var(--led)}
+.panel.menu .credits{grid-column:1 / -1}
+.opts{display:grid;gap:14px}
+.clubs{display:flex;gap:6px;flex-wrap:wrap}
+.clubs select{flex:1 1 140px;min-width:0;appearance:none;-webkit-appearance:none;padding:10px 34px 10px 12px;border-radius:9px;border:1px solid var(--line);border-left:6px solid var(--home);background:rgba(236,244,240,.06) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%23eef4f0' stroke-width='2'/%3E%3C/svg%3E") no-repeat right 12px center;color:var(--chalk);font:600 18px var(--body);cursor:pointer}
+.clubs select#kit2,.clubs select#nat2{border-left-color:var(--away)}
+.clubs select option{background:#0e1a14;color:#eef4f0}
+
+@media (max-height:560px) and (min-width:620px){
+  .panel.menu{width:min(860px,100%);grid-template-columns:1fr 1fr;column-gap:24px;align-items:start}
+  .panel.menu .intro{grid-column:1;grid-row:1 / span 2}
+  .panel.menu .opts{grid-column:2;grid-row:1 / span 3;display:grid;gap:12px}
+  .panel.menu .play{grid-column:1;grid-row:3}
+  .panel.menu .keys{grid-column:1 / span 2}
+  h1{font-size:44px}
+}
+
+#hudBtns{position:absolute;top:calc(10px + env(safe-area-inset-top,0px));right:12px;display:flex;gap:8px}
+#hudBtns button{width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:rgba(12,20,16,.7);font-weight:700;font-size:16px;display:grid;place-items:center}
+
+#touch{position:absolute;left:0;right:0;bottom:0;display:flex;justify-content:space-between;align-items:flex-end;padding:0 16px calc(14px + env(safe-area-inset-bottom,0px));pointer-events:none}
+.pad{display:grid;grid-auto-flow:column;gap:10px;pointer-events:auto;align-items:end}
+.pad.quad{grid-template-rows:auto auto;grid-auto-flow:row;grid-template-columns:auto auto auto}
+.pad.quad .tbtn{width:60px;height:60px;font-size:13px}
+.tbtn{width:70px;height:70px;border-radius:50%;background:rgba(236,244,240,.1);border:2px solid rgba(236,244,240,.28);color:var(--chalk);font-weight:700;font-size:15px;letter-spacing:.06em;text-transform:uppercase;touch-action:none;display:grid;place-items:center}
+.tbtn.big{width:84px;height:84px}
+.tbtn.on{background:rgba(236,244,240,.32)}
+.tbtn.atk{background:rgba(63,174,79,.3);border-color:rgba(120,220,130,.9)}
+.tbtn.atk.on{background:rgba(63,174,79,.6)}
+.tbtn.pw{background:rgba(255,210,87,.3);border-color:var(--led);font-size:12px;letter-spacing:.02em}
+.pad.p1 .tbtn{border-color:var(--home)}
+.pad.p2 .tbtn{border-color:var(--away)}
+@media (max-height:420px){.tbtn{width:58px;height:58px;font-size:13px}.tbtn.big{width:72px;height:72px}}
+#rotate{position:absolute;top:calc(12px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-weight:600;font-size:15px;white-space:nowrap;pointer-events:none}
+@media (prefers-reduced-motion:reduce){.play{transition:none}}
+</style>
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}[hidden]{display:none!important}</style>
+</head>
+<body>
+<div id="stage">
+  <canvas id="cv" aria-label="Football pitch"></canvas>
+
+  <div id="hudBtns" hidden>
+    <button id="muteBtn" aria-label="Toggle sound" title="Sound">♪</button>
+    <button id="pauseBtn" aria-label="Pause" title="Pause (P)">II</button>
+  </div>
+
+  <div id="touch" hidden></div>
+  <div id="rotate" hidden>Turn your phone sideways for a wider pitch</div>
+
+  <div class="overlay" id="menu">
+    <div class="panel menu">
+      <div class="intro">
+        <div class="eyebrow">Football · Dribble · Shoot · Score</div>
+        <h1>Pitch <span class="w">Du</span><span class="b">el</span></h1>
+        <p class="sub">One against one, with a keeper in each goal. Dribble past your opponent, time your shot or header, and beat the keeper. The referee whistles every foul, shows the cards and points to the spot. Level at full time? Penalties.</p>
+      </div>
+      <div class="opts">
+        <div class="field">
+          <div class="label">Game mode</div>
+          <div class="seg" id="skillSeg">
+            <button id="sk-starter" data-skill="starter">Starter</button>
+            <button id="sk-expert" data-skill="expert">Expert</button>
+          </div>
+          <p class="wdesc" id="skilldesc"></p>
+        </div>
+        <div class="field">
+          <div class="label">Opponent</div>
+          <div class="seg" id="modeSeg">
+            <button id="mode-bot" data-mode="bot">Bot</button>
+            <button id="mode-2p" data-mode="2p">2 Players</button>
+          </div>
+        </div>
+        <div class="field" id="levelField">
+          <div class="label">Bot level</div>
+          <div class="seg" id="levelSeg">
+            <button id="lv-easy" data-level="easy">Easy</button>
+            <button id="lv-medium" data-level="medium">Medium</button>
+            <button id="lv-hard" data-level="hard">Hard</button>
+          </div>
+        </div>
+        <div class="field" id="kitField">
+          <div class="label">Kits</div>
+          <div class="clubs">
+            <select id="kit1" aria-label="Home kit"></select>
+            <select id="kit2" aria-label="Away kit"></select>
+          </div>
+        </div>
+        <div class="field" id="natField">
+          <div class="label">Superpowers</div>
+          <div class="clubs">
+            <select id="nat1" aria-label="Home superpower"></select>
+            <select id="nat2" aria-label="Away superpower"></select>
+          </div>
+          <p class="wdesc" id="natdesc"></p>
+        </div>
+        <div class="field" id="lenField">
+          <div class="label">Match</div>
+          <div class="seg" id="lenSeg">
+            <button id="len-2" data-mins="2">2 min</button>
+            <button id="len-3" data-mins="3">3 min</button>
+            <button id="len-5" data-mins="5">5 min</button>
+          </div>
+        </div>
+      </div>
+      <button class="play" id="playBtn">Kick off</button>
+      <div class="keys" id="keys"></div>
+      <p class="credits">Made by <a href="https://matdata.eu" target="_blank" rel="noopener">Matdata</a> · MIT licensed · Fonts: Bungee, Barlow Condensed (SIL OFL) · <a href="https://github.com/Matdata-eu/game-football-duel" target="_blank" rel="noopener">Source</a> · <a href="https://github.com/Matdata-eu/game-football-duel/issues" target="_blank" rel="noopener">Support &amp; feedback</a></p>
+    </div>
+  </div>
+
+  <div class="overlay" id="pauseOv" hidden>
+    <div class="panel center">
+      <h2>Time out</h2>
+      <div class="row">
+        <button class="play" id="resumeBtn">Resume</button>
+        <button class="ghost" id="quitBtn">Quit to menu</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay" id="overOv" hidden>
+    <div class="panel center">
+      <div class="eyebrow" id="overEyebrow">Full time</div>
+      <h2 id="overTitle">You win</h2>
+      <div class="final"><span class="s1" id="fs1">0</span><span class="dash">–</span><span class="s2" id="fs2">0</span></div>
+      <p class="sub" id="overStats" style="margin:0 auto"></p>
+      <div class="row">
+        <button class="play" id="againBtn">Rematch</button>
+        <button class="ghost" id="menuBtn">Change setup</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+"use strict";
+const $ = id => document.getElementById(id);
+const cv = $("cv"), ctx = cv.getContext("2d");
+
+// ---------- world (meters; x along the pitch, y up). Logical screen is VW x 720 ----------
+let VW = 1280;
+const VH = 720, FLOOR = 600, S = 62;
+const HL = 20, GH = 2.44, GD = 1.5, BOX = 6, SPOT = 4.5, CIRC = 3.2;   // a small pitch: goal lines at +-20 m
+const R = .17, GRAV = 11;                                               // ball radius, gravity
+const RUN = 6.4, ACC = 34, JUMP = 5.3;
+const MINS = { 2: 120, 3: 180, 5: 300 };
+const LEVELS = {
+  easy:   { name: "Easy",   speed: .84, think: [.28, .5],  range: 11, shoot: .35, aim: .55, steal: .14, tackle: .10, foulErr: .35, jump: .35, chip: .05, feint: .05, keep: .64, pen: .22 },
+  medium: { name: "Medium", speed: .93, think: [.16, .32], range: 14, shoot: .5,  aim: .35, steal: .24, tackle: .2,  foulErr: .18, jump: .6,  chip: .12, feint: .12, keep: .74, pen: .3 },
+  hard:   { name: "Hard",   speed: 1,   think: [.08, .18], range: 17, shoot: .65, aim: .2,  steal: .34, tackle: .3,  foulErr: .08, jump: .85, chip: .2,  feint: .22, keep: .8,  pen: .38 },
+};
+const KEEP_HUMAN = .74;           // how good the keeper of a human player is
+const KITS = {
+  red:     { name: "Red",            shirt: "#d7262e", shade: "#a81b22", shorts: "#1b1b1d", socks: "#d7262e", trim: "#f2c230" },
+  sky:     { name: "Sky blue",       shirt: "#5aaee6", shade: "#3d8cc4", shorts: "#f4f4f2", socks: "#5aaee6", trim: "#f4f4f2" },
+  purple:  { name: "Purple",         shirt: "#5b2a86", shade: "#43206a", shorts: "#5b2a86", socks: "#f4f4f2", trim: "#f4f4f2" },
+  stripes: { name: "Blue and black", shirt: "#1f5fbf", stripe: "#141416", shade: "#174a96", shorts: "#141416", socks: "#141416", trim: "#1f5fbf" },
+  yellow:  { name: "Yellow",         shirt: "#f6d02f", shade: "#d4ad16", shorts: "#1b1b1d", socks: "#f6d02f", trim: "#1b1b1d" },
+  hoops:   { name: "Green and white", shirt: "#1d8a4a", hoop: "#f4f4f2", shade: "#166b39", shorts: "#f4f4f2", socks: "#1d8a4a", trim: "#f4f4f2" },
+  white:   { name: "White",          shirt: "#f3f3f0", shade: "#d5d5d0", shorts: "#f3f3f0", socks: "#f3f3f0", trim: "#c8343c" },
+};
+const KIT_ORDER = ["red", "sky", "purple", "stripes", "yellow", "hoops", "white"];
+const KEEPER_KIT = [
+  { shirt: "#2fbf5b", shade: "#23964a", shorts: "#14301e", socks: "#2fbf5b", trim: "#0d1f14", glove: "#f2f25a" },
+  { shirt: "#f08a24", shade: "#c96c12", shorts: "#2a1a0a", socks: "#f08a24", trim: "#2a1a0a", glove: "#7ee0ff" },
+];
+const LOOKS = [{ skin: "#e2b48c", hair: "#3a2a1e" }, { skin: "#a8724a", hair: "#16110d" }, { skin: "#c99a74", hair: "#6b4a2a" }, { skin: "#8a5a3a", hair: "#121212" }];
+// Tongue-in-cheek national superpowers. "call" powers work right after a goal (or card) goes against you; "play" powers during open play.
+const NATIONS = {
+  none: { name: "No superpower", power: "", flag: null },
+  bel: { name: "Belgium", power: "Belgian compromise", short: "Deal", when: "call", flag: { v: ["#1a1a1a", "#fdda24", "#ef3340"] },
+         desc: "Belgium: when a goal goes against you, negotiate until it is fair: the goal stands, and you get one too." },
+  ita: { name: "Italy", power: "Protesta!", short: "Protesta", when: "call", flag: { v: ["#009246", "#ffffff", "#ce2b37"] },
+         desc: "Italy: when a goal or a card goes against you, surround the referee. Half the time VAR cancels it; otherwise you get a yellow card." },
+  bra: { name: "Brazil", power: "Jogo bonito", short: "Samba", when: "play", flag: { bra: true },
+         desc: "Brazil: for 8 seconds the ball is glued to your feet. Nobody can take it, you run faster, and your shots bend past the keeper more often." },
+  ger: { name: "Germany", power: "Efficiency", short: "Tor", when: "play", flag: { h: ["#000000", "#dd0000", "#ffce00"] },
+         desc: "Germany: your next shot is aimed perfectly and goes in. No keeper can stop it (the crossbar still can't be argued with)." },
+  eng: { name: "England", power: "Tea time", short: "Tea", when: "play", flag: { eng: true },
+         desc: "England: offer a cup of tea. Your opponent is far too polite to refuse, leaves the ball and stops for a moment." },
+  arg: { name: "Argentina", power: "Hand of God", short: "Mano", when: "play", flag: { arg: true },
+         desc: "Argentina: when the ball is in the air near you in the opponent's half, punch it into the net. The referee doesn't see a thing." },
+};
+const NATION_ORDER = ["bel", "ita", "bra", "ger", "eng", "arg", "none"];
+
+// ---------- settings ----------
+const settings = { skill: "starter", mode: "bot", level: "medium", mins: 3, kit1: "red", kit2: "sky", nat1: "bel", nat2: "ita" };
+try { Object.assign(settings, JSON.parse(localStorage.getItem("pitchduel.settings") || "{}")); } catch (e) {}
+if (!MINS[settings.mins]) settings.mins = 3;
+if (!LEVELS[settings.level]) settings.level = "medium";
+if (!KITS[settings.kit1]) settings.kit1 = "red";
+if (!KITS[settings.kit2]) settings.kit2 = "sky";
+if (!NATIONS[settings.nat1]) settings.nat1 = "bel";
+if (!NATIONS[settings.nat2]) settings.nat2 = "ita";
+if (settings.skill !== "expert") settings.skill = "starter";
+// Starter mode: run, jump and shoot (the shot aims itself at the goal), 2-minute matches, no tackles or superpowers.
+const EXPERT = () => settings.skill === "expert";
+const CMINS = () => EXPERT() ? settings.mins : 2;
+function saveSettings() { try { localStorage.setItem("pitchduel.settings", JSON.stringify(settings)); } catch (e) {} }
+// The away side switches to another kit when both pick the same one
+function kitsFor() {
+  const a = settings.kit1;
+  let b = settings.kit2;
+  if (b === a) b = KIT_ORDER.find(k => k !== a && k !== "white" && k !== "stripes") || "white";
+  return [KITS[a], KITS[b]];
+}
+
+// ---------- helpers ----------
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const ease = k => k <= 0 ? 0 : k >= 1 ? 1 : k * k * (3 - 2 * k);
+const lerp = (a, b, k) => a + (b - a) * k;
+function randn() { let u = 0, v = 0; while (!u) u = Math.random(); while (!v) v = Math.random(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); }
+const fmtClock = s => { s = Math.max(0, s); const m = Math.floor(s / 60), r = Math.floor(s % 60); return m + ":" + String(r).padStart(2, "0"); };
+function ik(a, b, l1, l2, bend) {
+  const dx = b[0] - a[0], dy = b[1] - a[1];
+  const d = clamp(Math.hypot(dx, dy), .01, l1 + l2 - 1e-4);
+  const base = Math.atan2(dy, dx);
+  const al = Math.acos(clamp((l1 * l1 + d * d - l2 * l2) / (2 * l1 * d), -1, 1));
+  return [a[0] + l1 * Math.cos(base + bend * al), a[1] + l1 * Math.sin(base + bend * al)];
+}
+const rotAbout = (p, c, a) => { const s = Math.sin(a), co = Math.cos(a), x = p[0] - c[0], y = p[1] - c[1]; return [c[0] + co * x - s * y, c[1] + s * x + co * y]; };
+
+// ---------- audio ----------
+let AC = null, muted = false;
+try { muted = localStorage.getItem("pitchduel.muted") === "1"; } catch (e) {}
+function initAudio() {
+  if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { AC = null; } }
+  if (AC && AC.state === "suspended") AC.resume().catch(() => {});
+}
+function tone(freq, dur, type, vol, slide, delay) {
+  if (!AC || muted || G.demo) return;
+  const t = AC.currentTime + (delay || 0), o = AC.createOscillator(), g = AC.createGain();
+  o.type = type || "sine"; o.frequency.setValueAtTime(freq, t);
+  if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(30, freq + slide), t + dur);
+  g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g).connect(AC.destination); o.start(t); o.stop(t + dur + .02);
+}
+let noiseBuf = null;
+function ensureNoise() { if (!noiseBuf) { noiseBuf = AC.createBuffer(1, AC.sampleRate * 1.5, AC.sampleRate); const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; } }
+function noise(dur, vol, freq, q, delay) {
+  if (!AC || muted || G.demo) return;
+  ensureNoise();
+  const t = AC.currentTime + (delay || 0), s = AC.createBufferSource(), f = AC.createBiquadFilter(), g = AC.createGain();
+  s.buffer = noiseBuf; f.type = "bandpass"; f.frequency.value = freq; f.Q.value = q || 1;
+  g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  s.connect(f).connect(g).connect(AC.destination); s.start(t); s.stop(t + dur);
+}
+// the referee's pea whistle: a high tone with a fast warble
+function whistle(n, long) {
+  if (!AC || muted || G.demo) return;
+  for (let i = 0; i < (n || 1); i++) {
+    const last = i === (n || 1) - 1, dur = long && last ? .75 : .2;
+    const t = AC.currentTime + i * .32, o = AC.createOscillator(), g = AC.createGain(), lfo = AC.createOscillator(), lg = AC.createGain();
+    o.type = "sine"; o.frequency.value = 2950; lfo.frequency.value = 38; lg.gain.value = 140;
+    lfo.connect(lg).connect(o.frequency);
+    g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.09, t + .02);
+    g.gain.setValueAtTime(.09, t + dur - .04); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    o.connect(g).connect(AC.destination); o.start(t); o.stop(t + dur + .02); lfo.start(t); lfo.stop(t + dur + .02);
+  }
+}
+const sfx = {
+  kick: big => { tone(120, .12, "sine", big ? .42 : .26, -60); noise(.05, big ? .22 : .13, 1300, 1.3); },
+  touch: () => noise(.04, .06, 900, 1.5),
+  bounce: v => noise(.05, Math.min(.12, v * .015), 520, 1),
+  thud: () => { noise(.08, .14, 650, 1); tone(150, .08, "sine", .12, -40); },
+  post: () => { tone(1040, .55, "triangle", .12); tone(1570, .4, "sine", .06); tone(520, .3, "sine", .05); },
+  net: () => noise(.5, .16, 2300, .6),
+  slide: () => noise(.35, .08, 1500, .5),
+  catch: () => { noise(.06, .14, 800, 1.2); tone(180, .08, "sine", .1, -50); },
+  power: () => { tone(520, .12, "triangle", .08, 400); tone(780, .2, "triangle", .06, 500, .08); },
+};
+// Crowd reactions, synthesized. A cheer is a swelling crowd roar (filtered noise with a slow, uneven
+// swell) under a few hundred claps from a couple of dozen people; when the bot scores the stadium goes
+// quiet except for one cricket.
+let applauseBuf = null;
+function makeApplause() {
+  // pre-rendered once: each clapper claps at their own pace, each clap a short bright burst
+  const sr = AC.sampleRate, len = Math.floor(sr * 3), b = AC.createBuffer(2, len, sr);
+  for (let ch = 0; ch < 2; ch++) {
+    const d = b.getChannelData(ch);
+    for (let p = 0; p < 26; p++) {
+      const rate = 3.6 + Math.random() * 2.2, amp = .25 + Math.random() * .35, tn = .25 + Math.random() * .5;
+      let t = Math.random() * .25;
+      while (t < 2.9) {
+        const i0 = Math.floor(t * sr), n = Math.floor(sr * (.012 + Math.random() * .01));
+        let lp = 0;
+        for (let i = 0; i < n * 4 && i0 + i < len; i++) {
+          const w = Math.random() * 2 - 1;
+          lp += (w - lp) * tn;                                // a softer or sharper palm
+          d[i0 + i] += (w - lp * .6) * amp * Math.exp(-i / n);
+        }
+        t += (1 + (Math.random() - .5) * .25) / rate;
+      }
+    }
+  }
+  return b;
+}
+function cheer(big) {
+  if (!AC || muted || G.demo) return;
+  ensureNoise();
+  if (!applauseBuf) applauseBuf = makeApplause();
+  const t0 = AC.currentTime, dur = big ? 3 : 2.3, end = t0 + dur, rnd = Math.random;
+  const out = AC.createGain();
+  out.gain.value = big ? 1.25 : 1;
+  out.connect(AC.destination);
+  // the roar: two bands of noise, each swelling and wavering on its own
+  for (const [fq, q, lvl] of [[520, .9, .55], [1350, 1.1, .4]]) {
+    const s = AC.createBufferSource(), f = AC.createBiquadFilter(), g = AC.createGain(), lfo = AC.createOscillator(), lg = AC.createGain();
+    s.buffer = noiseBuf; s.loop = true; f.type = "bandpass"; f.frequency.value = fq; f.Q.value = q;
+    const pk = lvl * (big ? 1 : .8);
+    g.gain.setValueAtTime(.0001, t0);
+    g.gain.exponentialRampToValueAtTime(pk, t0 + .35);
+    g.gain.setValueAtTime(pk, t0 + dur * .35);
+    g.gain.exponentialRampToValueAtTime(.0001, end);
+    lfo.frequency.value = 2.5 + rnd() * 3; lg.gain.value = pk * .25;
+    lfo.connect(lg).connect(g.gain);
+    s.connect(f).connect(g).connect(out);
+    s.start(t0, rnd()); s.stop(end); lfo.start(t0); lfo.stop(end);
+  }
+  // the applause, starting a beat after the roar and fading with it
+  const a = AC.createBufferSource(), ag = AC.createGain(), hp = AC.createBiquadFilter();
+  a.buffer = applauseBuf; hp.type = "highpass"; hp.frequency.value = 600;
+  ag.gain.setValueAtTime(.0001, t0); ag.gain.exponentialRampToValueAtTime(.55, t0 + .25);
+  ag.gain.setValueAtTime(.55, t0 + dur * .45); ag.gain.exponentialRampToValueAtTime(.0001, end);
+  a.connect(hp).connect(ag).connect(out); a.start(t0 + .05); a.stop(end);
+}
+function cricket() {
+  if (!AC || muted || G.demo) return;
+  // a pause, then three chirps of four quick pulses each
+  const t0 = AC.currentTime + .5, o = AC.createOscillator(), g = AC.createGain();
+  o.type = "sine"; o.frequency.value = 4300 + Math.random() * 300;
+  g.gain.value = 0;
+  for (let c = 0; c < 3; c++) for (let p = 0; p < 4; p++) {
+    const t = t0 + c * .42 + p * .032;
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.08, t + .006); g.gain.linearRampToValueAtTime(0, t + .02);
+  }
+  o.connect(g).connect(AC.destination); o.start(t0); o.stop(t0 + 1.2);
+}
+// "Ooh": the crowd on a save or a shot off the woodwork
+function ooh() {
+  if (!AC || muted || G.demo) return;
+  ensureNoise();
+  const t0 = AC.currentTime, s = AC.createBufferSource(), f = AC.createBiquadFilter(), g = AC.createGain();
+  s.buffer = noiseBuf; s.loop = true; f.type = "bandpass"; f.Q.value = 3;
+  f.frequency.setValueAtTime(380, t0); f.frequency.linearRampToValueAtTime(300, t0 + 1.1);
+  g.gain.setValueAtTime(.0001, t0); g.gain.exponentialRampToValueAtTime(.5, t0 + .25); g.gain.exponentialRampToValueAtTime(.0001, t0 + 1.2);
+  s.connect(f).connect(g).connect(AC.destination); s.start(t0, Math.random()); s.stop(t0 + 1.25);
+}
+// The crowd cheers a human's goal; the bot's goal is met with polite silence.
+const crowdFor = (human, big) => human ? cheer(big) : cricket();
+function sayEn(text) {
+  if (muted || G.demo || !("speechSynthesis" in window)) return;
+  try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.lang = "en-GB"; u.rate = 1.1; u.volume = .95; speechSynthesis.speak(u); } catch (e) {}
+}
+
+// ---------- game state ----------
+const G = { state: "menu", demo: true, P: [], K: [], ball: null, score: [0, 0], t: 0, stT: 0, clock: 0, total: 180, parts: [], shake: 0,
+  caption: null, capUntil: 0, note: null, sig: null, call: null, after: null, pending: null, protest: null, pen: null, so: null,
+  cam: 0, refX: 0, refArms: null, winner: -1, endWhy: "", kickoffSide: 0, bulge: [0, 0], kickId: 0, goalCancelled: false };
+const other = f => G.P[1 - f.side];
+// "You take it" but "Player 2 takes it"
+const says = (f, verb) => { if (f.label !== "You") return f.label + " " + verb; const [w, ...r] = verb.split(" "); return ["You", /(ss|sh|ch|x)es$/.test(w) ? w.slice(0, -2) : w.slice(0, -1), ...r].join(" "); };
+const whose = f => f.label === "You" ? "Your" : f.label + "'s";
+const isOff = f => G.t < f.offUntil;
+const goalOf = s => s ? HL : -HL;               // the goal side s defends
+
+function makePlayer(side, human, levelKey) {
+  const f = { side, A: side ? -1 : 1, human, x: 0, y: 0, vx: 0, vy: 0, face: side ? -1 : 1, ground: true, act: null, stun: 0,
+    ctrlCool: 0, headCool: 0, chal: 0, charge: -1, yellow: 0, offUntil: -9, teaUntil: -9, braUntil: -9, gerArmed: false, charges: 0,
+    run: 0, input: { move: 0, jump: false, kick: false, tackle: false, power: false }, prev: {}, bot: null, label: "",
+    look: LOOKS[side], stats: { shots: 0, target: 0, tackles: 0, fouls: 0 } };
+  if (!human) f.bot = new Bot(f, botLevel(levelKey));
+  return f;
+}
+function makeKeeper(side, save) {
+  return { side, A: side ? -1 : 1, x: goalOf(side) + (side ? -1 : 1) * .6, y: 0, vy: 0, vx: 0, st: "set", t: 0, dive: null, holdT: 0, cool: 0, smother: 0,
+    save, plan: null, run: 0, kit: KEEPER_KIT[side], look: LOOKS[side + 2] };
+}
+// Starter bots stick to the starter moves: no tackles
+function botLevel(key) { const lv = LEVELS[key]; return EXPERT() ? lv : Object.assign({}, lv, { tackle: 0 }); }
+function newBall() { return { x: 0, y: R, vx: 0, vy: 0, rot: 0, owner: null, keeper: null, last: -1, shot: null, dead: false }; }
+
+function startGame(demo) {
+  G.demo = !!demo;
+  const two = settings.mode === "2p";
+  G.P = [makePlayer(0, !demo, "medium"), makePlayer(1, !demo && two, demo ? "medium" : settings.level)];
+  if (demo) G.P[0].bot.lv = botLevel("medium");
+  const kits = kitsFor();
+  G.P[0].kit = kits[0]; G.P[1].kit = kits[1];
+  for (const f of G.P) {
+    f.natKey = EXPERT() ? (f.side ? settings.nat2 : settings.nat1) : "none"; f.nat = NATIONS[f.natKey];
+    f.charges = f.nat.power ? (CMINS() >= 5 ? 2 : 1) : 0;
+  }
+  G.P[0].label = demo ? "Bot" : two ? "Player 1" : "You";
+  G.P[1].label = demo ? "Bot" : two ? "Player 2" : "Bot · " + LEVELS[settings.level].name;
+  // the keepers: a human's keeper is solid; the bot's keeper follows the bot level
+  const kq = s => G.demo ? .74 : G.P[s].human ? KEEP_HUMAN : LEVELS[settings.level].keep;
+  G.K = [makeKeeper(0, kq(0)), makeKeeper(1, kq(1))];
+  G.ball = newBall();
+  G.score = [0, 0]; G.t = 0; G.parts = []; G.total = MINS[CMINS()]; G.clock = 0;
+  G.note = null; G.pending = null; G.protest = null; G.pen = null; G.so = null; G.winner = -1; G.call = null; G.after = null; G.sig = null;
+  G.cam = 0; G.refX = -3; G.refArms = { L: [.12, .06, 0], R: [.12, .06, 0] }; G.bulge = [0, 0];
+  kickoff(Math.random() < .5 ? 0 : 1);
+  $("menu").hidden = !demo; $("overOv").hidden = true; $("pauseOv").hidden = true;
+  $("hudBtns").hidden = demo;
+  setTouch(!demo);
+}
+function resetKeepers() { for (const k of G.K) { k.x = goalOf(k.side) + k.A * .6; k.y = 0; k.vy = 0; k.st = "set"; k.dive = null; k.plan = null; k.cool = 0; } }
+function kickoff(s) {
+  G.kickoffSide = s;
+  const b = G.ball = newBall();
+  for (const f of G.P) {
+    f.x = -f.A * (f.side === s ? .45 : 3.4); f.y = 0; f.vx = f.vy = 0; f.ground = true; f.act = null; f.stun = 0; f.charge = -1;
+    f.face = f.A; f.teaUntil = -9; if (f.bot) f.bot.reset();
+  }
+  resetKeepers();
+  b.x = 0;
+  setState("kickoff");
+}
+function setState(s) { G.state = s; G.stT = 0; }
+function caption(big, small, d) { G.caption = { big, small }; G.capUntil = G.t + (d || 2); }
+function signal(sig, dir, d) { G.sig = { sig, dir, until: G.t + (d || 1.4) }; }
+function note(title, en, d) { G.note = { title, en, until: G.t + (d || 2.4) }; }
+
+// ---------- ball physics ----------
+function ballPhys(b, dt, live) {
+  const py = b.y;
+  b.vy -= GRAV * dt;
+  b.vx -= b.vx * .06 * dt;
+  b.x += b.vx * dt; b.y += b.vy * dt;
+  if (b.y < R) {
+    b.y = R;
+    if (b.vy < -1.4) { if (live) sfx.bounce(-b.vy); b.vy = -b.vy * .58; b.vx *= .92; }
+    else b.vy = 0;
+  }
+  if (b.y <= R + .001 && b.vy === 0) b.vx -= b.vx * 1.15 * dt;   // rolling resistance
+  for (const gx of [-HL, HL]) {
+    // the crossbar, seen end-on
+    const dx = b.x - gx, dy = b.y - GH, d = Math.hypot(dx, dy), m = R + .06;
+    if (d < m && d > 1e-6) {
+      const nx = dx / d, ny = dy / d, vn = b.vx * nx + b.vy * ny;
+      if (vn < 0) { b.vx -= 1.7 * vn * nx; b.vy -= 1.7 * vn * ny; if (live) hitBar(); }
+      b.x = gx + nx * m; b.y = GH + ny * m;
+    }
+    // the roof and back of the net
+    const ax = Math.abs(b.x), inside = ax > Math.abs(gx) && ax < Math.abs(gx) + GD && Math.sign(b.x) === Math.sign(gx);
+    if (inside && py >= GH + R - .02 && b.y < GH + R && b.vy < 0) { b.y = GH + R; b.vy = -b.vy * .25; b.vx *= .7; }
+    if (inside && py <= GH - R + .02 && b.y > GH - R && b.vy > 0) { b.y = GH - R; b.vy = -b.vy * .3; }
+    if (ax > Math.abs(gx) + GD - R && b.y < GH && Math.sign(b.x) === Math.sign(gx) && live && b.dead) { b.x = Math.sign(gx) * (Math.abs(gx) + GD - R); b.vx = -b.vx * .15; }
+  }
+}
+// Where the ball crosses x = X (time, height), following its flight and bounces; null if it never gets there.
+function predict(b0, X, maxT) {
+  const b = { x: b0.x, y: b0.y, vx: b0.vx, vy: b0.vy, dead: false };
+  const dir = Math.sign(X - b.x);
+  if (!dir || Math.sign(b.vx) !== dir) return null;
+  const h = 1 / 120;
+  for (let t = h; t < (maxT || 3); t += h) {
+    const px = b.x, py = b.y;
+    ballPhys(b, h, false);
+    if ((b.x - X) * dir >= 0) { const k = (X - px) / ((b.x - px) || 1); return { t, y: py + (b.y - py) * k }; }
+    if (Math.abs(b.vx) < .3) return null;
+  }
+  return null;
+}
+// where a ball in the air comes down to foot height
+function landing(b) {
+  if (b.y < .7 && b.vy <= 0) return b.x + b.vx * .2;
+  const c = { x: b.x, y: b.y, vx: b.vx, vy: b.vy };
+  for (let t = 0; t < 3; t += 1 / 60) { ballPhys(c, 1 / 60, false); if (c.y < .7 && c.vy < 0) return c.x; }
+  return c.x;
+}
+function hitBar() { sfx.post(); ooh(); G.shake = .35; if (G.ball.shot) { G.ball.shot = null; caption("Crossbar!", "", 1.2); } }
+
+// ---------- touching the ball ----------
+const foot = f => f.x + f.face * .34;
+function canKick(f) {
+  const b = G.ball;
+  if (b.keeper || isOff(f)) return false;
+  if (b.owner === f) return true;
+  return Math.abs(b.x - foot(f)) < .5 && b.y - f.y < .62;
+}
+function canVolley(f) {
+  const b = G.ball;
+  if (b.keeper || b.owner || isOff(f)) return false;
+  return Math.abs(b.x - (f.x + f.face * .3)) < .62 && b.y - f.y >= .55 && b.y - f.y < 1.35;
+}
+function kickBall(f, vx, vy, opts) {
+  const b = G.ball;
+  opts = opts || {};
+  b.owner = null; b.keeper = null; b.vx = vx; b.vy = vy; b.last = f.side; b.dead = false;
+  if (b.y < R + .02) b.y = R + .02;
+  f.ctrlCool = .3; f.charge = -1;
+  f.act = { type: opts.head ? "head" : "kick", t: 0, hi: b.y - f.y > .5 };
+  G.kickId++;
+  if (opts.head) sfx.thud(); else sfx.kick(Math.hypot(vx, vy) > 17);
+  registerShot(f, opts);
+}
+// A shot aimed at height h on the opponent's goal line; err blurs it the further out it's taken
+function aimAt(f, h, err, cap) {
+  const b = G.ball, X = f.A * HL, dist = Math.abs(X - b.x);
+  let sp = clamp(9 + dist * .5, 11, cap || 24);
+  const t = dist / sp;
+  let vy = (h - b.y + .5 * GRAV * t * t) / t;
+  let vx = f.A * sp;
+  if (err) { vy += randn() * err * (1 + dist * .08); vx *= 1 + randn() * err * .04; }
+  return [vx, vy];
+}
+function shootAuto(f, h, err, opts) {
+  f.face = f.A;
+  const v = aimAt(f, h, err);
+  kickBall(f, v[0], v[1], opts);
+}
+function shootManual(f, p) {
+  if (f.gerArmed) { f.gerArmed = false; const v = aimAt(f, .45 + Math.random() * 1.3, 0); f.face = f.A; kickBall(f, v[0], v[1], { unsave: true }); return; }
+  kickBall(f, f.face * (7 + 17 * p), 1.2 + 6.5 * p);
+}
+function registerShot(f, opts) {
+  const b = G.ball, gx = f.A * HL, k = G.K[1 - f.side];
+  b.shot = null;
+  if (Math.sign(b.vx) !== f.A || Math.abs(gx - b.x) > 30) return;
+  const pr = predict(b, gx);
+  if (!pr) return;
+  f.stats.shots++;
+  if (pr.y >= GH - R * .3) { b.shot = { side: f.side, on: false }; return; }
+  f.stats.target++;
+  const dist = Math.abs(gx - b.x), speed = Math.hypot(b.vx, b.vy);
+  let q = k.save - Math.max(0, speed - 12) * .022;
+  if (pr.y > 1.85) q -= .22; else if (pr.y < .32) q -= .1;
+  if (dist < 7) q -= .22; else if (dist > 20) q += .1;
+  if (k.st !== "set") q -= .25;
+  if (G.t < f.braUntil) q -= .3;
+  if (opts && opts.head) q += .05;
+  const saved = !(opts && opts.unsave) && Math.random() < clamp(q, .04, .95);
+  const at = predict(b, k.x);
+  b.shot = { side: f.side, on: true, saved, h: at ? at.y : pr.y, T: G.t + (at ? at.t : pr.t), done: false, id: G.kickId };
+  if (opts && opts.unsave) b.shot.unsave = true;
+}
+
+// ---------- the keepers ----------
+function keeperSave(k) {
+  const b = G.ball, sp = Math.hypot(b.vx, b.vy), fd = k.A;
+  b.shot = null; b.last = k.side;
+  if (sp < 17 && Math.random() < .72) {
+    k.st = "hold"; k.holdT = 1.2; b.keeper = k; b.owner = null; b.vx = b.vy = 0;
+    sfx.catch(); caption("Saved!", "Held by the keeper", 1.4);
+  } else {
+    b.vx = fd * (3 + Math.random() * 4); b.vy = 3 + Math.random() * 3.5;
+    sfx.thud(); caption("Saved!", "Pushed away", 1.4);
+  }
+  if (!G.demo) ooh();
+  G.shake = .25;
+}
+function updKeeper(k, dt) {
+  const b = G.ball, gx = goalOf(k.side), fd = k.A;
+  k.cool -= dt; k.t += dt;
+  if (k.y > 0 || k.vy > 0) { k.vy -= GRAV * dt; k.y = Math.max(0, k.y + k.vy * dt); if (k.y === 0) k.vy = 0; }
+  if (k.st === "hold") {
+    b.x = k.x + fd * .28; b.y = 1.05; b.vx = b.vy = 0;
+    if (G.state === "play") k.holdT -= dt;
+    if (k.holdT <= 0) {
+      // roll it out or punt it to the halfway line
+      b.keeper = null; b.last = k.side; b.dead = false;
+      if (Math.random() < .5) { b.vx = fd * (8 + Math.random() * 3); b.vy = 2; } else { b.vx = fd * (10 + Math.random() * 5); b.vy = 6 + Math.random() * 3; sfx.kick(true); }
+      k.st = "set"; k.cool = .8;
+    }
+    return;
+  }
+  if (k.st === "dive" || k.st === "down") {
+    if (k.st === "dive" && k.t > .75) { k.st = "down"; k.t = 0; }
+    else if (k.st === "down" && k.t > .55) { k.st = "set"; k.dive = null; }
+  }
+  // the shot coming in: plan a dive, early if the keeper reads it, late if beaten
+  const sh = b.shot;
+  if (sh && sh.on && sh.side !== k.side && k.plan !== sh.id) {
+    k.plan = sh.id;
+    const T = Math.max(0, sh.T - G.t);
+    k.dive = { at: G.t + Math.max(0, T - (sh.saved ? .32 : .1)), h: sh.h, saved: sh.saved, started: false };
+  }
+  if (k.dive && !k.dive.started && G.t >= k.dive.at && (k.st === "set")) {
+    k.dive.started = true; k.st = "dive"; k.t = 0;
+    const h = k.dive.saved ? k.dive.h : k.dive.h + (Math.random() < .5 ? .7 : -.7);
+    k.dive.kind = h < .75 ? "low" : h > 1.65 ? "high" : "mid";
+    if (k.dive.kind === "high") k.vy = clamp((h - 1.75) * 3.4 + 2, 1.5, 5.5);
+  }
+  if (sh && sh.on && sh.side !== k.side && !sh.done && Math.abs(b.x - k.x) < .32 + R) {
+    sh.done = true;
+    if (sh.saved) { keeperSave(k); return; }
+  }
+  // positioning: on the line, coming out as the ball gets close
+  if (k.st === "set") {
+    const dist = Math.abs(b.x - gx);
+    let tx = gx + fd * (dist < 16 ? clamp(.6 + (16 - dist) * .13, .6, 2.4) : .6);
+    const loose = !b.owner && !b.keeper && Math.hypot(b.vx, b.vy) < 6 && b.y < 1.6 && Math.abs(b.x - gx) < BOX && !(b.shot && b.shot.on);
+    if (loose) tx = b.x;
+    const owner = b.owner;
+    if (owner && owner.side !== k.side && Math.abs(b.x - gx) < BOX) tx = b.x - fd * .1;
+    tx = clamp(tx, Math.min(gx + fd * .3, gx + fd * (BOX - .3)), Math.max(gx + fd * .3, gx + fd * (BOX - .3)));
+    const d = tx - k.x, v = clamp(d * 6, -5, 5);
+    k.vx = v; k.x += v * dt; k.run += Math.abs(v) * dt * 2.6;
+    // collect a loose ball, or smother it at an attacker's feet
+    const near = Math.abs(b.x - k.x) < .42 && b.y < 2.25 + k.y && Math.abs(b.x - gx) < BOX && k.cool <= 0 && !b.keeper;
+    if (near && !b.owner && !(sh && sh.on && sh.side !== k.side)) {
+      if (Math.hypot(b.vx, b.vy) < 15) { k.st = "hold"; k.holdT = 1.1; b.keeper = k; b.shot = null; b.last = k.side; sfx.catch(); }
+      else { b.vx = -b.vx * .3; b.vy = Math.abs(b.vy) * .5 + 2; b.shot = null; sfx.thud(); }
+    } else if (near && b.owner && b.owner.side !== k.side) {
+      k.smother -= dt;
+      if (k.smother <= 0) {
+        k.smother = .4;
+        if (Math.random() < (G.t < b.owner.braUntil ? 0 : .32)) { b.owner.ctrlCool = .6; b.owner = null; k.st = "hold"; k.holdT = 1.1; b.keeper = k; b.shot = null; b.last = k.side; sfx.catch(); caption("Smothered", "The keeper dives at the feet", 1.2); }
+      }
+    }
+  }
+}
+
+// ---------- the players ----------
+const canAct = f => G.state === "play" && !f.act && f.stun <= 0 && G.t >= f.teaUntil && !isOff(f);
+function jump(f) {
+  if (!canAct(f) || !f.ground) return;
+  f.vy = JUMP; f.ground = false;
+  if (G.ball.owner === f) G.ball.owner = null;
+}
+function slide(f) {
+  if (!EXPERT() || !canAct(f) || !f.ground) return;
+  if (G.ball.owner === f) G.ball.owner = null;
+  f.act = { type: "slide", t: 0 }; f.charge = -1; sfx.slide();
+}
+function kickPress(f) {
+  if (!canAct(f) && !(f.act && f.act.type === "kick" && f.act.t > .2)) return;
+  const b = G.ball;
+  if (!EXPERT()) {
+    // Starter: one button, and the shot finds the goal by itself
+    if (canKick(f) || canVolley(f)) {
+      const h = .35 + Math.random() * 1.6, dist = Math.abs(f.A * HL - b.x);
+      if (f.gerArmed) { f.gerArmed = false; shootAuto(f, .5 + Math.random(), 0, { unsave: true }); }
+      else shootAuto(f, h, .1 + dist * .006);
+    } else f.act = { type: "kick", t: 0, miss: true };
+    return;
+  }
+  if (canVolley(f)) { const p = .65; f.gerArmed ? shootManual(f, p) : kickBall(f, f.face * (8 + 10 * p), 1 + 2 * p); return; }
+  if (canKick(f)) { f.charge = 0; return; }
+  f.act = { type: "kick", t: 0, miss: true };
+}
+function kickRelease(f) {
+  if (f.charge < 0) return;
+  const p = clamp(f.charge / .7, .08, 1);
+  f.charge = -1;
+  if (canKick(f)) shootManual(f, p);
+  else f.act = { type: "kick", t: 0, miss: true };
+}
+function updPlayer(f, dt) {
+  const b = G.ball, I = f.input;
+  if (isOff(f)) { f.x = f.side ? HL + 6 : -HL - 6; return; }
+  if (f.stun > 0) f.stun -= dt;
+  f.ctrlCool -= dt; f.headCool -= dt;
+  const a = f.act;
+  if (a) {
+    a.t += dt;
+    if (a.type === "kick" && a.t > .3) f.act = null;
+    else if (a.type === "head" && a.t > .28) f.act = null;
+    else if (a.type === "fall" && a.t > (a.dur || 1.1)) f.act = null;
+    else if (a.type === "slide") updSlide(f, dt);
+  }
+  // running
+  let tv = 0;
+  const free = G.state === "play" && !isOff(f) && f.stun <= 0 && G.t >= f.teaUntil && (!f.act || f.act.type === "kick" || f.act.type === "head");
+  if (free) {
+    tv = I.move * RUN * (f.bot ? f.bot.lv.speed : 1);
+    if (G.t < f.braUntil) tv *= 1.15;
+    if (b.owner === f) tv *= .92;
+    if (f.charge >= 0) tv *= .55;
+    if (f.act && f.act.type === "kick") tv *= .5;
+    if (I.move) f.face = Math.sign(I.move);
+  } else if (G.state === "goal" && f.act && f.act.type === "celebrate") tv = f.act.dir * RUN * .7 * (G.stT < 1.6 ? 1 : 0);
+  if (!(f.act && f.act.type === "slide")) {
+    const acc = (f.ground ? ACC : ACC * .45) * dt;
+    if (f.act && f.act.type === "fall") f.vx *= Math.max(0, 1 - 6 * dt);
+    else f.vx += clamp(tv - f.vx, -acc, acc);
+  }
+  if (!f.ground) { f.vy -= GRAV * dt; f.y += f.vy * dt; if (f.y <= 0) { f.y = 0; f.vy = 0; f.ground = true; } }
+  f.x = clamp(f.x + f.vx * dt, -HL - 1.2, HL + 1.2);
+  f.run += Math.abs(f.vx) * dt * 2.7;
+  // the shot: hold to wind up, release to strike
+  if (f.charge >= 0) { f.charge += dt; if (!canKick(f)) f.charge = -1; else if (f.charge >= 1) kickRelease(f); }
+}
+function updSlide(f, dt) {
+  const a = f.act, b = G.ball, o = other(f);
+  f.vx = f.face * 8.6 * Math.max(0, 1 - a.t / .6);
+  const fx = f.x + f.face * .72;
+  const along = (b.x - f.x) * f.face;
+  if (!a.won && !b.keeper && along > -.15 && along < .72 + .45 && b.y < .55) {
+    a.won = true; if (b.owner && b.owner !== f) b.owner.ctrlCool = .45;
+    b.owner = null; b.vx = f.face * (5 + Math.random() * 2); b.vy = 1.4; b.last = f.side; b.shot = null; b.dead = false;
+    f.stats.tackles++; sfx.touch();
+  }
+  if (!a.hit && !isOff(o) && o.ground && !(o.act && o.act.type === "fall") && Math.abs(o.x - fx) < .42 && G.state === "play") {
+    a.hit = true;
+    if (!a.won) foul(f, o);
+    else o.act = { type: "fall", t: 0, dur: .55 };       // won the ball cleanly; the dribbler goes over
+  }
+  if (a.t >= .78) f.act = null;
+}
+// players don't walk through each other
+function separate() {
+  const [A, B] = G.P;
+  if (isOff(A) || isOff(B) || G.state === "pen") return;
+  if ((A.act && A.act.type === "slide") || (B.act && B.act.type === "slide")) return;
+  if (Math.abs(A.y - B.y) > .7) return;
+  const d = B.x - A.x, m = .46;
+  if (Math.abs(d) < m) { const s = d >= 0 ? 1 : -1, ov = (m - Math.abs(d)) / 2; A.x -= s * ov; B.x += s * ov; }
+}
+function updBall(dt) {
+  const b = G.ball;
+  if (b.keeper) { b.rot += 0; return; }
+  const o = b.owner;
+  if (o) {
+    if (!o.ground || o.stun > 0 || isOff(o) || G.t < o.teaUntil || (o.act && (o.act.type === "slide" || o.act.type === "fall")) || G.state !== "play") b.owner = null;
+    else {
+      const tx = o.x + o.face * .42;
+      b.vx = o.vx + (tx - b.x) * 11; b.vy = 0; b.y = R;
+      b.x += b.vx * dt; b.rot += b.vx * dt / R;
+      contest(o, dt);
+      return;
+    }
+  }
+  const px = b.x;
+  ballPhys(b, dt, true);
+  b.rot += b.vx * dt / R;
+  if (G.state === "play") for (const f of G.P) touch(f);
+  // goal or out over the end line
+  if (!b.dead && Math.abs(b.x) > HL + R && Math.abs(px) <= HL + R) {
+    const def = b.x > 0 ? 1 : 0;
+    b.dead = true;
+    if (b.y < GH) { if (G.state === "play") goal(1 - def); }
+    else if (G.state === "play") outOver(def);
+  }
+  if (Math.abs(b.x) > HL + 6) { b.vx = 0; b.x = Math.sign(b.x) * (HL + 6); }
+}
+// the defender nicks the ball off the dribbler
+function contest(o, dt) {
+  const q = other(o), b = G.ball;
+  if (isOff(q) || !q.ground || q.act || q.stun > 0 || G.t < q.teaUntil || q.ctrlCool > 0) return;
+  if (Math.abs(q.x - b.x) > .52) { q.chal = .15; return; }
+  q.chal -= dt;
+  if (q.chal > 0) return;
+  q.chal = .35;
+  const ch = G.t < o.braUntil ? 0 : q.bot ? q.bot.lv.steal : .3;
+  if (Math.random() < ch) { b.owner = q; o.ctrlCool = .5; b.last = q.side; q.stats.tackles++; sfx.touch(); }
+}
+function touch(f) {
+  const b = G.ball;
+  if (isOff(f) || b.keeper || b.owner) return;
+  const dx = b.x - f.x, by = b.y - f.y, sp = Math.hypot(b.vx - f.vx, b.vy);
+  if (f.act && (f.act.type === "slide" || f.act.type === "fall")) return;
+  // the head
+  const hx = f.x + f.face * .05, hy = f.y + 1.68;
+  if (f.headCool <= 0 && Math.hypot(b.x - hx, b.y - hy) < R + .14 && b.y > f.y + 1.45) {
+    f.headCool = .35;
+    const dist = Math.abs(f.A * HL - b.x), toGoal = !EXPERT() || f.face === f.A;
+    if (toGoal && dist < 15) { f.face = f.A; const v = aimAt(f, .4 + Math.random() * 1.8, .25, 14); kickBall(f, v[0], v[1], { head: true }); }
+    else kickBall(f, (EXPERT() ? f.face : f.A) * (6 + Math.min(6, sp * .3)) + f.vx * .3, 2.5 + (f.vy > 0 ? 1.5 : 0), { head: true });
+    return;
+  }
+  // first touch: a slow ball at the feet is controlled
+  if (Math.abs(b.x - foot(f)) < .4 && by < .5 && f.ground && f.ctrlCool <= 0 && sp < 8.5 && (!f.act || f.act.t > .2) && G.t >= f.teaUntil && f.stun <= 0) {
+    b.owner = f; b.shot = null; b.last = f.side; b.dead = false; if (sp > 3) sfx.touch(); return;
+  }
+  // the body blocks it
+  const bw = .22 + R;
+  if (Math.abs(dx) < bw && by > -.05 && by < 1.5) {
+    const rel = b.vx - f.vx, s = dx !== 0 ? Math.sign(dx) : -Math.sign(b.vx || 1);
+    if (rel * s < 0) {
+      b.vx = f.vx + -rel * .3; b.vy = Math.max(b.vy * .4, by < .5 ? .8 : 1.6);
+      b.x = f.x + s * bw; b.last = f.side;
+      if (b.shot && b.shot.side !== f.side) caption("Blocked!", "", 1);
+      b.shot = null; sfx.thud();
+    }
+  }
+}
+
+// ---------- goals, restarts, fouls ----------
+function goal(s) {
+  const f = G.P[s], b = G.ball;
+  G.score[s]++; G.lastScorer = s;
+  b.shot = null; G.bulge[1 - s] = 1;
+  sfx.net(); G.shake = .7;
+  const big = G.clock > G.total - 20 || G.score[s] === G.score[1 - s];
+  crowdFor(f.human, big);
+  const own = b.last !== s && b.last !== -1;
+  caption("Goal!", (own ? "Own goal · " : "") + f.label, 3);
+  signal("goal", 0, 2.4);
+  setTimeout(() => sayEn("Goal!"), 150);
+  if (!isOff(f) && !own) f.act = { type: "celebrate", t: 0, dir: f.A };
+  G.pending = { against: 1 - s, kind: "goal", until: G.t + 3, s };
+  G.goalCancelled = false;
+  setState("goal");
+}
+function outOver(def) {
+  // over the bar: the keeper restarts with a goal kick
+  G.ball.shot = null;
+  caption("Goal kick", "Over the bar", 1.4);
+  G.call = { total: 1.1, sig: "goalkick", dir: def ? 1 : -1 }; G.after = () => goalKick(def);
+  setState("stop");
+}
+function goalKick(s) {
+  const k = G.K[s], b = G.ball;
+  resetKeepers();
+  k.x = goalOf(s) + k.A * 1.2; k.st = "hold"; k.holdT = 1.2;
+  b.keeper = k; b.owner = null; b.shot = null; b.dead = false; b.vx = b.vy = 0;
+  // attackers leave the penalty area
+  for (const f of G.P) if (f.side !== s && Math.abs(f.x - goalOf(s)) < BOX + .5) f.x = goalOf(s) + k.A * (BOX + .6);
+  setState("play");
+}
+function foul(off, vic) {
+  const behind = off.face === vic.face, reckless = Math.abs(G.ball.x - vic.x) > 2.2;
+  let card = behind || reckless || Math.random() < .12 ? "yellow" : null;
+  off.stats.fouls++;
+  vic.act = { type: "fall", t: 0, dur: 1.1 };
+  if (G.ball.owner === vic) G.ball.owner = null;
+  const og = goalOf(off.side), inBox = Math.abs(vic.x - og) < BOX && Math.abs(vic.x) < HL;
+  if (card) { off.yellow++; if (off.yellow >= 2) { card = "red"; off.yellow = 0; } }
+  const sigs = [{ sig: "foul", d: .8 }];
+  if (card) sigs.push({ sig: card, d: 1.4 });
+  sigs.push({ sig: inBox ? "penalty" : "freekick", d: 1 });
+  const why = behind ? "tackle from behind" : reckless ? "the ball was nowhere near" : "late tackle";
+  G.call = { sigs, total: sigs.reduce((a, x) => a + x.d, 0), dir: vic.A, card, off: off.side,
+    big: inBox ? "Penalty!" : card === "red" ? "Red card!" : card ? "Yellow card" : "Free kick",
+    small: (card ? off.label + " · " : "") + why };
+  G.call.said = false;
+  if (card === "red") off.offUntil = G.t + G.call.total + 15;
+  if (card) G.pending = { against: off.side, kind: "card", card, until: G.t + 3.2, s: vic.side };
+  G.after = inBox ? () => startPen(vic.side, false) : () => freeKick(vic, off);
+  whistle(1);
+  setState("stop");
+}
+function freeKick(vic, off) {
+  const b = G.ball;
+  b.x = clamp(vic.x, -HL + BOX + .5, HL - BOX - .5); b.y = R; b.vx = b.vy = 0; b.shot = null; b.keeper = null; b.dead = false;
+  vic.x = b.x - vic.A * .42; vic.face = vic.A; vic.act = null; vic.stun = 0; vic.vx = 0;
+  if (!isOff(off)) { off.x = clamp(b.x + vic.A * 3.2, -HL + .5, HL - .5); off.act = null; off.vx = 0; off.face = -vic.A; }
+  b.owner = vic; vic.ctrlCool = 0;
+  setState("restart");
+}
+
+// ---------- penalties: a front view from behind the taker ----------
+function startPen(s, so) {
+  const f = G.P[s];
+  G.pen = { s, k: 1 - s, phase: "aim", t: 0, aim: 0, high: false, kcol: 0, khigh: false, res: null, so, botAt: 1 + Math.random() * .9 };
+  if (!f.human) { G.pen.aim = [-1, 1, -1, 1, 0][Math.floor(Math.random() * 5)]; G.pen.high = Math.random() < .3; }
+  G.ball.owner = null; G.ball.keeper = null; G.ball.shot = null;
+  caption(so ? "Penalty " + (G.so.kicks[s].length + 1) : "Penalty!", says(f, "takes it"), 1.6);
+  setState("pen");
+}
+function updPen(dt) {
+  const p = G.pen, f = G.P[p.s], kp = G.P[p.k];
+  p.t += dt;
+  if (p.phase === "aim") {
+    if (f.human) {
+      p.aim = f.input.move; p.high = !!f.input.jump;
+      if ((f.input.kick && !f.prev.kick && p.t > .35) || p.t > 6) { p.phase = "run"; p.t = 0; }
+    } else if (p.t > p.botAt) { p.phase = "run"; p.t = 0; }
+  } else if (p.phase === "run") {
+    if (p.t >= .55) {
+      // the strike: the keeper commits now
+      if (kp.human) { p.kcol = kp.input.move; p.khigh = !!kp.input.jump; }
+      else {
+        const read = G.demo ? .3 : LEVELS[settings.level].pen;
+        if (Math.random() < read) { p.kcol = p.aim; p.khigh = p.high; }
+        else { const cols = [-1, 0, 1].filter(c => c !== p.aim); p.kcol = cols[Math.floor(Math.random() * cols.length)]; p.khigh = Math.random() < .3; }
+      }
+      const corner = p.aim !== 0;
+      if (Math.random() < (corner && p.high ? .16 : corner ? .05 : .02)) p.res = "miss";
+      else if (p.kcol === p.aim) {
+        const ch = p.aim === 0 ? (p.khigh === p.high ? .9 : .7) : (p.khigh === p.high ? .85 : .4);
+        p.res = Math.random() < ch ? "save" : "goal";
+      } else p.res = "goal";
+      p.missKind = p.high ? "over" : Math.random() < .5 ? "post" : "wide";
+      p.phase = "flight"; p.t = 0; sfx.kick(true);
+    }
+  } else if (p.phase === "flight") {
+    if (p.t >= .48) {
+      p.phase = "result"; p.t = 0;
+      if (p.res === "goal") { sfx.net(); crowdFor(f.human, !!p.so); caption("Goal!", f.label, 1.8); G.shake = .5; }
+      else if (p.res === "save") { sfx.catch(); if (!G.demo) ooh(); caption("Saved!", whose(kp) + " keeper guessed right", 1.8); }
+      else { if (p.missKind === "post") sfx.post(); if (!G.demo) ooh(); caption(p.missKind === "over" ? "Over the bar!" : p.missKind === "post" ? "Off the post!" : "Wide!", says(f, "misses"), 1.8); }
+    }
+  } else if (p.phase === "result" && p.t >= 1.9) {
+    if (p.so) return nextShootout(p.res === "goal");
+    G.pen = null;
+    if (p.res === "goal") {
+      G.score[p.s]++; G.lastScorer = p.s;
+      G.pending = { against: p.k, kind: "goal", until: G.t + 3, s: p.s };
+      G.goalCancelled = false;
+      G.ball = newBall(); G.ball.dead = true;
+      for (const q of G.P) { q.act = null; q.stun = 0; }
+      resetKeepers();
+      setState("goal"); G.stT = 1.2;
+    } else goalKick(p.k);
+  }
+}
+function nextShootout(scored) {
+  const so = G.so, p = G.pen;
+  so.kicks[p.s].push(scored);
+  const g = s => so.kicks[s].filter(Boolean).length, n = s => so.kicks[s].length;
+  const g0 = g(0), g1 = g(1), n0 = n(0), n1 = n(1);
+  let done = false;
+  if (n0 <= so.n && n1 <= so.n) done = g0 + (so.n - n0) < g1 || g1 + (so.n - n1) < g0;
+  if (!done && n0 === n1 && n0 >= so.n && g0 !== g1) done = true;
+  if (done) { G.pen = null; endMatch(g0 > g1 ? 0 : 1, "On penalties " + g0 + "–" + g1); return; }
+  startPen(1 - p.s, true);
+}
+
+// ---------- superpowers ----------
+function canPower(f) {
+  if (!f.nat || !f.nat.power || f.charges <= 0) return false;
+  if (f.nat.when === "call") return !!(G.pending && G.pending.against === f.side && G.t < G.pending.until && !G.protest && (f.natKey !== "bel" || G.pending.kind === "goal"));
+  if (G.state !== "play" || isOff(f)) return false;
+  const b = G.ball, o = other(f);
+  if (f.natKey === "ger") return !f.gerArmed;
+  if (f.natKey === "bra") return G.t >= f.braUntil;
+  if (f.natKey === "eng") return !isOff(o) && G.t >= o.teaUntil;
+  if (f.natKey === "arg") return !b.keeper && b.y > .9 && b.y < 3.2 && Math.abs(b.x - f.x) < 1.8 && b.x * f.A > 0 && Math.abs(b.x) < HL - .5;
+  return false;
+}
+function usePower(f) {
+  if (!canPower(f)) return;
+  const o = other(f), b = G.ball;
+  f.charges--; sfx.power();
+  switch (f.natKey) {
+    case "bel": {
+      const p = G.pending; G.pending = null;
+      G.score[f.side]++;
+      signal("compromise", 0, 2.2);
+      note("Belgian compromise", "After long negotiations: the goal stands, and " + (f.label === "You" ? "you get" : f.label + " gets") + " one too", 3);
+      break;
+    }
+    case "ita": {
+      const p = G.pending; G.pending = null;
+      G.protest = { side: f.side, t: G.t, p, done: false };
+      note("Protesta!", says(f, "surrounds the referee"), 1.6);
+      sayEn("Ma dai, arbitro!");
+      break;
+    }
+    case "bra": f.braUntil = G.t + 8; note("Jogo bonito", "Brazil · the ball is glued to your feet for 8 seconds", 2.4); break;
+    case "ger": f.gerArmed = true; note("Efficiency", "Germany · your next shot goes in", 2.4); break;
+    case "eng": o.teaUntil = G.t + 2.6; if (b.owner === o) b.owner = null; if (o.charge >= 0) o.charge = -1; note("Tea time", (o.label === "You" ? "You politely accept" : o.label + " politely accepts") + " a cup of tea", 2.4); sayEn("Tea?"); break;
+    case "arg": {
+      f.face = f.A; f.vy = Math.max(f.vy, 3.5); f.ground = false;
+      const v = aimAt(f, 1 + Math.random() * .8, 0, 20);
+      kickBall(f, v[0], v[1], { head: true, unsave: true });
+      note("Hand of God", "The referee didn't see a thing", 2.6);
+      break;
+    }
+  }
+}
+function updProtest() {
+  const pr = G.protest; if (!pr || pr.done || G.t - pr.t < 1.6) return;
+  pr.done = true; G.protest = null;
+  const p = pr.p, f = G.P[pr.side];
+  if (Math.random() < .5) {
+    signal("var", 0, 1.8);
+    if (p.kind === "goal") { G.score[p.s] = Math.max(0, G.score[p.s] - 1); G.goalCancelled = pr.side; caption("VAR: no goal", "The goal is cancelled", 2.2); }
+    else {
+      const off = G.P[p.against];
+      if (p.card === "red") { off.offUntil = -9; off.yellow = 1; } else off.yellow = Math.max(0, off.yellow - 1);
+      caption("VAR: no card", "The card is cancelled", 2.2);
+    }
+    sayEn(p.kind === "goal" ? "No goal!" : "No card!");
+  } else {
+    f.yellow++;
+    let red = false;
+    if (f.yellow >= 2) { f.yellow = 0; red = true; f.offUntil = G.t + 15 + 3; }
+    signal(red ? "red" : "yellow", 0, 1.6);
+    caption(red ? "Red card!" : "Yellow card", f.label + " · dissent", 2);
+    whistle(1);
+  }
+}
+
+// ---------- bot ----------
+class Bot {
+  constructor(f, lv) { this.f = f; this.lv = lv; this.reset(); }
+  reset() { this.next = 0; this.tx = this.f.x; this.jumpedFor = -1; this.feintUntil = 0; this.hold = 0; }
+  update() {
+    const f = this.f, I = f.input, lv = this.lv, b = G.ball, o = other(f);
+    I.move = 0; I.jump = I.kick = I.tackle = I.power = false;
+    if (G.state !== "play" && G.state !== "goal" && G.state !== "stop") return;
+    if (canPower(f) && Math.random() < this.powerWant(f, o)) { I.power = true; return; }
+    if (G.state !== "play" || isOff(f) || f.act || f.stun > 0 || G.t < f.teaUntil) return;
+    const A = f.A, gx = A * HL;
+    // go up for a header
+    if (!b.owner && !b.keeper && f.ground && this.jumpedFor !== G.kickId && b.vy < 1 && b.y > 1.7 && b.y < 3.4 && Math.abs(b.x + b.vx * .22 - f.x) < .9) {
+      this.jumpedFor = G.kickId;
+      if (Math.random() < lv.jump) { I.jump = true; return; }
+    }
+    if (G.t >= this.next) {
+      this.next = G.t + lv.think[0] + Math.random() * (lv.think[1] - lv.think[0]);
+      this.think(f, o, b, lv, A, gx, I);
+      if (I.tackle) return;
+    }
+    if (b.owner === f && G.t < this.feintUntil) { I.move = -A; return; }
+    const d = this.tx - f.x;
+    I.move = Math.abs(d) > .18 ? Math.sign(d) : 0;
+  }
+  think(f, o, b, lv, A, gx, I) {
+    const own = -A * HL;
+    if (b.owner === f) {
+      const dist = Math.abs(gx - f.x), ahead = (o.x - f.x) * A, blocked = !isOff(o) && ahead > 0 && ahead < 1.8;
+      if (f.gerArmed && dist < 24) { shootAuto(f, .5 + Math.random(), 0, { unsave: true }); f.gerArmed = false; return; }
+      if (dist < lv.range && Math.random() < lv.shoot + (dist < 7 ? .45 : 0)) { shootAuto(f, this.pickH(), lv.aim); return; }
+      if (blocked && Math.random() < lv.chip) { f.face = A; kickBall(f, A * (5.5 + Math.random() * 2), 7 + Math.random() * 1.5); this.tx = f.x + A * 4; return; }
+      if (blocked && Math.random() < lv.feint) this.feintUntil = G.t + .3 + Math.random() * .2;
+      this.tx = gx;
+      return;
+    }
+    if (b.keeper) { this.tx = b.keeper.side === f.side ? clamp(f.x + A * 3, -HL + 3, HL - 3) : clamp(o.x - A * 2.5, -HL + 1, HL - 1); return; }
+    if (b.owner === o && !isOff(o)) {
+      this.tx = clamp(o.x - A * .9, -HL + .6, HL - .6);
+      const bd = (b.x - f.x) * Math.sign(o.x - f.x), gap = Math.abs(o.x - f.x);
+      if (EXPERT() && gap > .7 && gap < 1.45 && bd > .25 && f.ground && Math.random() < lv.tackle) {
+        const front = o.face !== f.face;
+        if (front || Math.random() < lv.foulErr) { f.face = Math.sign(o.x - f.x) || f.face; I.tackle = true; }
+      }
+      return;
+    }
+    // a loose ball: get there first, goal-side
+    const land = landing(b);
+    this.tx = clamp(land - A * .28, -HL + .3, HL - .3);
+    if (canKick(f) && Math.abs(gx - f.x) < lv.range * .9 && Math.random() < lv.shoot) { shootAuto(f, this.pickH(), lv.aim * 1.3); return; }
+    if (canVolley(f) && Math.abs(gx - f.x) < lv.range && Math.random() < lv.shoot) { shootAuto(f, this.pickH(), lv.aim * 1.6); return; }
+    // clear it from danger
+    if (canKick(f) && Math.abs(own - f.x) < 8 && f.face !== A) { f.face = A; kickBall(f, A * 13, 7); }
+  }
+  pickH() {
+    const r = Math.random(), lv = this.lv;
+    return lv === LEVELS.hard || lv.range >= 17 ? (r < .4 ? .25 + Math.random() * .2 : r < .8 ? 1.75 + Math.random() * .4 : .6 + Math.random()) : .35 + Math.random() * 1.6;
+  }
+  powerWant(f, o) {
+    const b = G.ball;
+    switch (f.natKey) {
+      case "bel": return .03;
+      case "ita": return .025;
+      case "ger": return b.owner === f && Math.abs(f.A * HL - f.x) < 20 ? .02 : 0;
+      case "bra": return b.owner === f && Math.abs(o.x - f.x) < 2.5 ? .01 : 0;
+      case "eng": return b.owner === o && Math.abs(o.x - f.x) < 3 ? .006 : 0;
+      case "arg": return .12;
+    }
+    return 0;
+  }
+}
+
+// ---------- input ----------
+const KEYMAP = {
+  KeyA: [0, "left"], KeyD: [0, "right"], KeyW: [0, "jump"], KeyS: [0, "kick"], KeyE: [0, "tackle"], KeyQ: [0, "power"], KeyF: [0, "power"], Space: [0, "tackle"],
+  ArrowLeft: [1, "left"], ArrowRight: [1, "right"], ArrowUp: [1, "jump"], ArrowDown: [1, "kick"], Slash: [1, "tackle"], ShiftRight: [1, "tackle"], Period: [1, "power"], Enter: [1, "power"],
+};
+const TOUCH = [{}, {}], TAPS = [{}, {}], KEYS_DOWN = new Set(), KEYS_TAPPED = new Set();
+addEventListener("keydown", e => {
+  if (e.code === "KeyP" || e.code === "Escape") { if (G.state !== "menu" && !G.demo && G.state !== "over") { togglePause(); e.preventDefault(); } return; }
+  if (!KEYMAP[e.code] || e.target.tagName === "SELECT" || !$("menu").hidden || !$("overOv").hidden || !$("pauseOv").hidden) return;
+  e.preventDefault(); initAudio(); KEYS_DOWN.add(e.code); if (!e.repeat) KEYS_TAPPED.add(e.code);
+});
+addEventListener("keyup", e => KEYS_DOWN.delete(e.code));
+addEventListener("blur", () => KEYS_DOWN.clear());
+function keyState(side) {
+  const k = {};
+  for (const set of [KEYS_DOWN, KEYS_TAPPED]) for (const code of set) { const m = KEYMAP[code]; if (!m) continue; const p = settings.mode === "2p" ? m[0] : 0; if (p === side) { k[m[1]] = true; if (set === KEYS_TAPPED) KEYS_TAPPED.delete(code); } }
+  return k;
+}
+function humanInput(f) {
+  const I = f.input, K = keyState(f.side), T = TOUCH[f.side], tp = TAPS[f.side];
+  const on = a => !!(K[a] || T[a] || tp[a]);
+  I.move = (on("right") ? 1 : 0) - (on("left") ? 1 : 0);
+  I.jump = on("jump"); I.kick = on("kick"); I.tackle = on("tackle"); I.power = on("power");
+  for (const a in tp) tp[a] = false;
+}
+function actOnInput(f) {
+  const I = f.input, p = f.prev;
+  if (I.power && !p.power) usePower(f);
+  if (G.state !== "play") { f.charge = -1; return; }
+  if (I.jump && !p.jump) jump(f);
+  if (I.tackle && !p.tackle) slide(f);
+  if (I.kick && !p.kick) kickPress(f);
+  else if (!I.kick && p.kick) kickRelease(f);
+}
+function savePrev(f) { const I = f.input; f.prev = { move: I.move, jump: I.jump, kick: I.kick, tackle: I.tackle, power: I.power }; }
+
+// ---------- main step ----------
+function step(dt) {
+  G.t += dt; G.stT += dt;
+  const b = G.ball;
+  for (const f of G.P) { if (f.human) humanInput(f); else f.bot.update(); if (G.state !== "pen") actOnInput(f); }
+  if (G.state === "pen") { updPen(dt); for (const f of G.P) savePrev(f); updProtest(); return; }
+  if (G.state === "kickoff") {
+    const wait = G.demo ? .7 : 1.1;
+    if (G.stT < dt * 1.5) caption("Kick-off", (G.P[G.kickoffSide].label === "You" ? "Your" : G.P[G.kickoffSide].label + "'s") + " kick-off", 1.2);
+    if (G.stT >= wait) { whistle(1); setState("play"); const f = G.P[G.kickoffSide]; if (!isOff(f)) { b.owner = f; b.last = f.side; } }
+  }
+  if (G.state === "restart" && G.stT >= (G.demo ? .4 : .7)) { whistle(1); setState("play"); }
+  if (G.state === "play" || G.state === "goal" || G.state === "kickoff" || G.state === "restart" || G.state === "end") {
+    for (const f of G.P) updPlayer(f, dt);
+    separate();
+    for (const k of G.K) updKeeper(k, dt);
+    if (G.state !== "kickoff" && G.state !== "restart") updBall(dt);
+  }
+  for (const f of G.P) savePrev(f);
+  updProtest();
+  if (G.state === "play") {
+    if (!G.demo) G.clock += dt;
+    for (const f of G.P) if (f.offUntil > 0 && G.t >= f.offUntil) { f.offUntil = -9; f.x = -f.A * 8; f.vx = 0; f.act = null; note("Back on", says(f, "returns to the pitch"), 1.6); }
+    if (!G.demo && G.clock >= G.total && !(b.shot && b.shot.on && !b.shot.done)) fullTime();
+  }
+  if (G.state === "goal") {
+    if (G.protest) G.stT = Math.min(G.stT, 2.2);
+    if (G.stT >= (G.demo ? 2 : 3)) {
+      const c = G.goalCancelled;
+      G.pending = null;
+      if (c !== false && c !== undefined) goalKick(c); else kickoff(1 - G.lastScorer);
+    }
+  }
+  if (G.state === "stop") {
+    const c = G.call;
+    if (G.protest) G.stT = Math.min(G.stT, c.total - .05);
+    if (c.big && !c.said && G.stT > .05) { c.said = true; caption(c.big, c.small, c.total + .3); if (c.big !== "Free kick") sayEn(c.big.replace("!", "")); }
+    if (G.stT >= c.total * (G.demo ? .7 : 1)) { const a = G.after; G.after = null; G.call = null; if (a) a(); }
+  }
+  if (G.state === "end") {
+    if (G.stT >= (G.demo ? 2.5 : 3.2)) { if (G.demo) startGame(true); else gameOver(); }
+  }
+  // camera, referee, net
+  for (let i = 0; i < 2; i++) G.bulge[i] = Math.max(0, G.bulge[i] - dt * 1.4);
+  G.shake = Math.max(0, G.shake - dt * 3);
+  const half = VW / 2 / S, lim = HL + 4 - half;
+  const want = lim > 0 ? clamp(b.x, -lim, lim) : 0;
+  G.cam += (want - G.cam) * Math.min(1, dt * 4);
+  const rside = b.x > 0 ? -1 : 1;
+  G.refX += (clamp(b.x + rside * 4, -HL + 2, HL - 2) - G.refX) * Math.min(1, dt * 1.3);
+  updRef(dt);
+}
+function fullTime() {
+  G.ball.shot = null; G.ball.owner = null;
+  whistle(3, true);
+  const [a, c] = G.score;
+  if (a !== c) { endMatch(a > c ? 0 : 1, "Full time"); return; }
+  // level: penalties
+  G.so = { n: EXPERT() ? 5 : 3, kicks: [[], []] };
+  G.call = { total: 2.4, sig: "fulltime" }; G.after = () => startPen(0, true);
+  caption("Full time", "Level: penalties!", 2.4);
+  setState("stop");
+}
+function endMatch(w, why) {
+  G.winner = w; G.endWhy = why;
+  if (why === "Full time") caption("Full time", says(G.P[w], "wins") + " " + G.score[w] + "–" + G.score[1 - w], 3);
+  signal("fulltime", 0, 9);
+  for (const f of G.P) { f.charge = -1; if (f.side === w && !isOff(f)) f.act = { type: "celebrate", t: 0, dir: 0 }; }
+  setState("end");
+}
+
+// ---------- referee signals: arm angles from straight down (positive = outward, per screen side) ----------
+const REST = [.12, .06, 0];
+function refPose() {
+  const one = (dir, arm) => dir < 0 ? { L: arm, R: REST } : { L: REST, R: arm };
+  if (G.protest) return { L: [.9, 2.2, 1], R: [.9, 2.2, 1] };
+  if (G.state === "stop" && G.call) {
+    const c = G.call;
+    if (c.sigs) {
+      let t = G.stT, x = null;
+      for (const s of c.sigs) { if (t < s.d) { x = s; break; } t -= s.d; }
+      if (!x) x = c.sigs[c.sigs.length - 1];
+      if (x.sig === "foul") return { L: REST, R: REST, whistle: true };
+      if (x.sig === "yellow") return one(1, [3.05, 3.1, 3]);
+      if (x.sig === "red") return one(1, [3.05, 3.1, 4]);
+      if (x.sig === "penalty") return one(c.dir, [1.0, 1.0, 1]);
+      if (x.sig === "freekick") return one(c.dir, [2.3, 2.35, 1]);
+    }
+    if (c.sig === "goalkick") return one(c.dir, [1.2, 1.25, 1]);
+    if (c.sig === "fulltime") return { L: [2.5, 2.6, 1], R: [2.5, 2.6, 1] };
+  }
+  if (G.state === "kickoff" || G.state === "restart") return { L: REST, R: [1.55, 1.55, 1], whistle: G.stT > .7 };
+  const s = G.sig && G.t < G.sig.until ? G.sig : null;
+  if (s) {
+    switch (s.sig) {
+      case "goal": return one(G.refX > 0 ? -1 : 1, [1.55, 1.58, 1]);
+      case "yellow": return one(1, [3.05, 3.1, 3]);
+      case "red": return one(1, [3.05, 3.1, 4]);
+      case "var": { const a = 2.6 + .25 * Math.sin(G.t * 9); return { L: [a, a, 1], R: [a, a, 1], box: true }; }
+      case "compromise": { const a = 1.0 + .4 * Math.sin(G.t * 3); return { L: [a, 2.3, 1], R: [a, 2.3, 1] }; }
+      case "fulltime": return { L: [2.5, 2.6, 1], R: [2.5, 2.6, 1] };
+    }
+  }
+  return { L: REST, R: REST };
+}
+function updRef(dt) {
+  const t = refPose(), a = G.refArms, r = Math.min(1, dt * 12);
+  for (const s of ["L", "R"]) { a[s][0] += (t[s][0] - a[s][0]) * r; a[s][1] += (t[s][1] - a[s][1]) * r; a[s][2] = t[s][2]; }
+  a.whistle = t.whistle; a.box = t.box;
+}
+
+// ---------- poses: local meters, x toward where the player faces, y up from the feet ----------
+const STAND = { hip: [0, .94], ff: [.13, 0], bf: [-.13, 0], sh: [.03, 1.46], hd: [.05, 1.66], fh: [.14, .98], bh: [-.1, .98] };
+const PK = ["hip", "ff", "bf", "sh", "hd", "fh", "bh"];
+function poseOf(f) {
+  const a = f.act, p = {};
+  for (const n of PK) p[n] = STAND[n].slice();
+  const sp = clamp(Math.abs(f.vx) / RUN, 0, 1.2), ph = f.run;
+  if (a && a.type === "slide") return { hip: [-.05, .3], ff: [.86, .08], bf: [.28, .02], sh: [-.42, .66], hd: [-.52, .82], fh: [-.58, .25], bh: [.1, .78] };
+  if (a && a.type === "fall") return { hip: [0, .2], ff: [.88, .1], bf: [.8, .14], sh: [-.5, .24], hd: [-.7, .26], fh: [-.62, .55], bh: [-.25, .06], lying: true };
+  if (a && a.type === "celebrate") {
+    const k = Math.sin(G.t * 9);
+    return { hip: [0, .92], ff: [.2 * k, Math.max(0, .15 * k)], bf: [-.2 * k, Math.max(0, -.15 * k)], sh: [.04, 1.45], hd: [.05, 1.66], fh: [.22, 2.06], bh: [-.16, 2.04] };
+  }
+  if (G.t < f.teaUntil) return { hip: [0, .95], ff: [.14, 0], bf: [-.14, 0], sh: [0, 1.48], hd: [.01, 1.67], fh: [.22, 1.25], bh: [.12, 1.12], tea: true };
+  if (!f.ground) {
+    p.ff = [.16, .28]; p.bf = [-.12, .34]; p.fh = [.25, 1.55]; p.bh = [-.2, 1.5];
+  } else if (sp > .05) {
+    const s1 = Math.sin(ph), c1 = Math.cos(ph);
+    p.hip = [.02 * sp, .94 - .04 * sp];
+    p.ff = [.4 * sp * s1, .24 * sp * Math.max(0, c1)];
+    p.bf = [-.4 * sp * s1, .24 * sp * Math.max(0, -c1)];
+    p.sh = [.03 + .14 * sp, 1.44]; p.hd = [.07 + .16 * sp, 1.63];
+    p.fh = [.1 - .3 * sp * s1, 1.06 + .1 * sp * Math.max(0, -s1)]; p.bh = [-.04 + .3 * sp * s1, 1.06 + .1 * sp * Math.max(0, s1)];
+  }
+  if (a && a.type === "kick") {
+    const k = clamp(a.t / .28, 0, 1), hi = a.hi ? .4 : 0;
+    let fx, fy;
+    if (k < .35) { const q = k / .35; fx = lerp(.1, -.38, q); fy = lerp(0, .32, q); }
+    else if (k < .7) { const q = (k - .35) / .35; fx = lerp(-.38, .62, q); fy = lerp(.32, .42 + hi, q); }
+    else { const q = (k - .7) / .3; fx = lerp(.62, .2, q); fy = lerp(.42 + hi, .1, q); }
+    p.ff = [fx, fy]; p.bf = [-.06, 0]; p.fh = [.28, 1.25]; p.bh = [-.32, 1.2]; p.sh = [-.04, 1.45]; p.hd = [-.02, 1.65];
+  }
+  if (f.charge >= 0) { const k = clamp(f.charge / .7, 0, 1); p.ff = [-.1 - .25 * k, .1 + .22 * k]; p.bh = [-.3, 1.22]; p.fh = [.25, 1.2]; }
+  if (a && a.type === "head") { const k = Math.sin(clamp(a.t / .28, 0, 1) * Math.PI); p.hd = [p.hd[0] + .14 * k, p.hd[1] - .04 * k]; p.sh = [p.sh[0] + .08 * k, p.sh[1]]; }
+  return p;
+}
+function keeperPose(k) {
+  if (k.st === "hold") return { hip: [0, .92], ff: [.14, 0], bf: [-.14, 0], sh: [.04, 1.46], hd: [.06, 1.66], fh: [.3, 1.12], bh: [.26, 1.02], rot: 0 };
+  if (k.st === "dive" || k.st === "down") {
+    const d = k.dive || { kind: "low" }, e = ease(Math.min(1, (k.st === "down" ? 1 : k.t / .3)));
+    const stretch = { hip: [0, .94], ff: [.04, 0], bf: [-.14, .06], sh: [.02, 1.46], hd: [.03, 1.66], fh: [.1, 2.1], bh: [-.02, 2.06] };
+    if (d.kind === "low") return Object.assign(stretch, { rot: -1.38 * e, drop: .62 * e });
+    if (d.kind === "high") return Object.assign(stretch, { rot: -.3 * e, drop: 0 });
+    const h = clamp(d.h || 1.1, .7, 1.7);
+    return { hip: [0, .9], ff: [.18, 0], bf: [-.18, 0], sh: [.06, 1.44], hd: [.08, 1.63], fh: [.42, h], bh: [.38, h - .1], rot: 0 };
+  }
+  const sp = clamp(Math.abs(k.vx) / 5, 0, 1), s1 = Math.sin(k.run);
+  return { hip: [0, .84], ff: [.22 + .12 * sp * s1, 0], bf: [-.22 - .12 * sp * s1, 0], sh: [.1, 1.38], hd: [.13, 1.57], fh: [.38, 1.18], bh: [.33, 1.06], rot: 0 };
+}
+
+// ---------- rendering ----------
+const DISPLAY = "Bungee, Impact, 'Arial Black', sans-serif";
+const BODY = "'Barlow Condensed', 'Arial Narrow', sans-serif";
+const sx = wx => VW / 2 + (wx - G.cam) * S;
+const sy = wy => FLOOR - wy * S;
+const FAR = FLOOR - 92, NEAR = FLOOR + 46, SK = .42;           // the pitch seen at an angle: far touchline, near touchline, skew
+const PX = (wx, y) => sx(wx) + (FLOOR - y) * SK;
+const CROWD = []; { let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  for (let i = 0; i < 360; i++) CROWD.push({ x: rnd(), row: Math.floor(rnd() * 6), c: ["#d7262e", "#5aaee6", "#e8e2d0", "#3a4a5a", "#6b3a3a", "#2f3d4f", "#f6d02f", "#4a6a4a"][Math.floor(rnd() * 8)], h: .7 + rnd() * .5, ph: rnd() * 6 }); }
+
+function drawBackground() {
+  const g = ctx.createLinearGradient(0, 0, 0, FAR);
+  g.addColorStop(0, "#060a10"); g.addColorStop(.6, "#0f1820"); g.addColorStop(1, "#16222a");
+  ctx.fillStyle = g; ctx.fillRect(0, 0, VW, VH);
+  // floodlights
+  for (const x of [VW * .08, VW * .92]) {
+    const lg = ctx.createRadialGradient(x, 40, 4, x, 40, 220); lg.addColorStop(0, "rgba(255,250,230,.55)"); lg.addColorStop(.15, "rgba(255,250,230,.18)"); lg.addColorStop(1, "rgba(255,250,230,0)");
+    ctx.fillStyle = lg; ctx.fillRect(x - 220, 0, 440, 300);
+    ctx.fillStyle = "#fffbe8"; for (let i = 0; i < 4; i++) for (let j = 0; j < 2; j++) ctx.fillRect(x - 26 + i * 14, 30 + j * 12, 10, 8);
+  }
+  // the stands
+  const par = -G.cam * S * .3, jump = G.state === "goal" ? 1 : 0;
+  ctx.fillStyle = "#121a22"; ctx.fillRect(0, 230, VW, FAR - 230);
+  for (const c of CROWD) {
+    const y = 262 + c.row * 30, x = ((c.x * (VW + 400) + par) % (VW + 400) + VW + 400) % (VW + 400) - 200;
+    const hop = jump * Math.max(0, Math.sin(G.t * 10 + c.ph)) * 6;
+    ctx.fillStyle = c.c; ctx.globalAlpha = .55 - c.row * .04;
+    ctx.beginPath(); ctx.arc(x, y - 20 * c.h - hop, 6, 0, 7); ctx.fill();
+    ctx.fillRect(x - 8, y - 14 * c.h - hop, 16, 22);
+  }
+  ctx.globalAlpha = 1;
+  // advertising boards
+  ctx.fillStyle = "#0b1218"; ctx.fillRect(0, FAR - 34, VW, 30);
+  ctx.font = "400 18px " + DISPLAY; ctx.textBaseline = "middle"; ctx.textAlign = "center";
+  const off = ((-G.cam * S * .9 - G.t * 30) % 520 + 520) % 520;
+  for (let x = -520 + off; x < VW + 520; x += 520) {
+    ctx.fillStyle = "rgba(63,174,79,.55)"; ctx.fillText("PITCH DUEL", x, FAR - 19);
+    ctx.fillStyle = "rgba(255,210,87,.5)"; ctx.fillText("PLAYPORT", x + 180, FAR - 19);
+    ctx.fillStyle = "rgba(236,244,240,.35)"; ctx.fillText("FAIR PLAY", x + 340, FAR - 19);
+  }
+  ctx.fillStyle = "rgba(255,255,255,.08)"; ctx.fillRect(0, FAR - 34, VW, 2);
+}
+function drawPitch() {
+  // grass in mowing stripes, then the lines
+  ctx.fillStyle = "#215f2c"; ctx.fillRect(0, FAR - 4, VW, VH - FAR + 4);
+  const quad = (x0, x1, y0, y1, col) => { ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(PX(x0, y0), y0); ctx.lineTo(PX(x1, y0), y0); ctx.lineTo(PX(x1, y1), y1); ctx.lineTo(PX(x0, y1), y1); ctx.closePath(); ctx.fill(); };
+  for (let x = -HL - 6, i = 0; x < HL + 6; x += 2.5, i++) quad(x, x + 2.5, FAR, NEAR + 18, i % 2 ? "#2f8a3c" : "#349a43");
+  const sh = ctx.createLinearGradient(0, FAR, 0, VH); sh.addColorStop(0, "rgba(0,0,0,.18)"); sh.addColorStop(.35, "rgba(0,0,0,0)"); sh.addColorStop(1, "rgba(0,0,0,.35)");
+  ctx.fillStyle = sh; ctx.fillRect(0, FAR, VW, VH - FAR);
+  ctx.strokeStyle = "rgba(245,250,245,.82)"; ctx.lineWidth = 2.5; ctx.lineCap = "round";
+  const line = (x0, y0, x1, y1) => { ctx.beginPath(); ctx.moveTo(PX(x0, y0), y0); ctx.lineTo(PX(x1, y1), y1); ctx.stroke(); };
+  line(-HL, FAR, HL, FAR); line(-HL, NEAR, HL, NEAR);
+  line(-HL, FAR, -HL, NEAR); line(HL, FAR, HL, NEAR); line(0, FAR, 0, NEAR);
+  const mid = (FAR + NEAR) / 2, dep = NEAR - FAR;
+  ctx.beginPath(); ctx.ellipse(PX(0, mid), mid, CIRC * S, dep * .3, 0, 0, 7); ctx.stroke();
+  ctx.fillStyle = "rgba(245,250,245,.9)"; ctx.beginPath(); ctx.ellipse(PX(0, mid), mid, 4, 2, 0, 0, 7); ctx.fill();
+  for (const s of [-1, 1]) {
+    const g = s * HL, bx = s * (HL - BOX), yb = FAR + dep * .16, ye = NEAR - dep * .1, y6 = FAR + dep * .33, y7 = NEAR - dep * .28;
+    line(g, yb, bx, yb); line(bx, yb, bx, ye); line(bx, ye, g, ye);
+    line(g, y6, s * (HL - 2), y6); line(s * (HL - 2), y6, s * (HL - 2), y7); line(s * (HL - 2), y7, g, y7);
+    ctx.beginPath(); ctx.ellipse(PX(s * (HL - SPOT), mid), mid, 3.5, 2, 0, 0, 7); ctx.fill();
+  }
+  // corner flags
+  for (const s of [-1, 1]) for (const y of [FAR, NEAR]) {
+    const x = PX(s * HL, y); ctx.strokeStyle = "#e8e8e0"; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y - 34); ctx.stroke();
+    ctx.fillStyle = "#ffd257"; ctx.beginPath(); ctx.moveTo(x, y - 34); ctx.lineTo(x - s * 14, y - 29); ctx.lineTo(x, y - 24); ctx.closePath(); ctx.fill();
+  }
+}
+// The goal: posts at two depths around the players' line, the bar seen across, and the net behind
+const YF = FLOOR - 30, YN = FLOOR + 16;
+function goalPts(s) {
+  const g = s * HL, bk = s * (HL + GD + G.bulge[s > 0 ? 1 : 0] * .35), gh = GH * S;
+  return { fB: [PX(g, YF), YF], fT: [PX(g, YF), YF - gh], nB: [PX(g, YN), YN], nT: [PX(g, YN), YN - gh],
+    bfB: [PX(bk, YF + 4), YF + 4], bfT: [PX(bk, YF - gh * .78), YF - gh * .78 + 2], bnB: [PX(bk, YN - 2), YN - 2], bnT: [PX(bk, YN - gh * .78), YN - gh * .78] };
+}
+function drawGoalBack(s) {
+  const p = goalPts(s);
+  const poly = (pts, fill) => { ctx.beginPath(); pts.forEach((q, i) => i ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1])); ctx.closePath(); ctx.fillStyle = fill; ctx.fill(); };
+  poly([p.fB, p.fT, p.bfT, p.bfB], "rgba(240,245,250,.07)");
+  poly([p.fT, p.nT, p.bnT, p.bfT], "rgba(240,245,250,.1)");
+  poly([p.bfT, p.bnT, p.bnB, p.bfB], "rgba(240,245,250,.09)");
+  // the mesh
+  ctx.strokeStyle = "rgba(240,245,250,.28)"; ctx.lineWidth = 1;
+  for (let i = 0; i <= 8; i++) {
+    const k = i / 8;
+    const a = [lerp(p.fT[0], p.nT[0], k), lerp(p.fT[1], p.nT[1], k)], b = [lerp(p.bfT[0], p.bnT[0], k), lerp(p.bfT[1], p.bnT[1], k)], c = [lerp(p.bfB[0], p.bnB[0], k), lerp(p.bfB[1], p.bnB[1], k)];
+    ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.lineTo(c[0], c[1]); ctx.stroke();
+  }
+  for (let i = 1; i <= 6; i++) {
+    const k = i / 7;
+    const a = [lerp(p.fT[0], p.fB[0], k), lerp(p.fT[1], p.fB[1], k)], b = [lerp(p.bfT[0], p.bfB[0], k), lerp(p.bfT[1], p.bfB[1], k)], c = [lerp(p.bnT[0], p.bnB[0], k), lerp(p.bnT[1], p.bnB[1], k)];
+    ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.lineTo(c[0], c[1]); ctx.stroke();
+  }
+  ctx.lineCap = "round"; ctx.strokeStyle = "#f4f6f8"; ctx.lineWidth = 5;
+  ctx.beginPath(); ctx.moveTo(p.fB[0], p.fB[1]); ctx.lineTo(p.fT[0], p.fT[1]); ctx.stroke();
+  ctx.strokeStyle = "rgba(200,205,210,.6)"; ctx.lineWidth = 2.5;
+  ctx.beginPath(); ctx.moveTo(p.fT[0], p.fT[1]); ctx.lineTo(p.bfT[0], p.bfT[1]); ctx.lineTo(p.bfB[0], p.bfB[1]); ctx.moveTo(p.nT[0], p.nT[1]); ctx.lineTo(p.bnT[0], p.bnT[1]); ctx.lineTo(p.bnB[0], p.bnB[1]); ctx.stroke();
+}
+function drawGoalFront(s) {
+  const p = goalPts(s);
+  ctx.lineCap = "round"; ctx.strokeStyle = "#f4f6f8"; ctx.lineWidth = 5;
+  ctx.beginPath(); ctx.moveTo(p.fT[0], p.fT[1]); ctx.lineTo(p.nT[0], p.nT[1]); ctx.lineTo(p.nB[0], p.nB[1]); ctx.stroke();
+  ctx.strokeStyle = "rgba(0,0,0,.18)"; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(p.nT[0] + 2, p.nT[1]); ctx.lineTo(p.nB[0] + 2, p.nB[1]); ctx.stroke();
+}
+function drawReferee() {
+  const sc = S * .72, y0 = FAR + 22, x0 = PX(G.refX, y0) - 0;
+  const Y = m => y0 - m * sc, a = G.refArms;
+  ctx.save(); ctx.lineCap = "round"; ctx.lineJoin = "round";
+  ctx.fillStyle = "rgba(0,0,0,.22)"; ctx.beginPath(); ctx.ellipse(x0, y0 + 2, .3 * sc, .05 * sc, 0, 0, 7); ctx.fill();
+  ctx.strokeStyle = "#cfd3d6"; ctx.lineWidth = .1 * sc;
+  ctx.beginPath(); ctx.moveTo(x0 - .08 * sc, Y(.5)); ctx.lineTo(x0 - .1 * sc, Y(.42)); ctx.moveTo(x0 + .08 * sc, Y(.5)); ctx.lineTo(x0 + .1 * sc, Y(.42)); ctx.stroke();
+  ctx.strokeStyle = "#111"; ctx.lineWidth = .11 * sc;
+  ctx.beginPath(); ctx.moveTo(x0 - .1 * sc, Y(.42)); ctx.lineTo(x0 - .11 * sc, Y(.05)); ctx.moveTo(x0 + .1 * sc, Y(.42)); ctx.lineTo(x0 + .11 * sc, Y(.05)); ctx.stroke();
+  ctx.fillStyle = "#111"; ctx.fillRect(x0 - .2 * sc, Y(.95), .4 * sc, .42 * sc);
+  ctx.fillStyle = "#18181a"; ctx.beginPath(); ctx.moveTo(x0 - .21 * sc, Y(1.45)); ctx.lineTo(x0 + .21 * sc, Y(1.45)); ctx.lineTo(x0 + .19 * sc, Y(.9)); ctx.lineTo(x0 - .19 * sc, Y(.9)); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = "#e8d23a"; ctx.fillRect(x0 - .21 * sc, Y(1.45), .42 * sc, .04 * sc);
+  ctx.fillStyle = "#d9a882"; ctx.beginPath(); ctx.arc(x0, Y(1.6), .105 * sc, 0, 7); ctx.fill();
+  ctx.fillStyle = "#2a2a2a"; ctx.beginPath(); ctx.arc(x0, Y(1.63), .108 * sc, Math.PI * 1.05, Math.PI * 1.95); ctx.fill();
+  if (a.whistle) { ctx.fillStyle = "#c9ccd0"; ctx.fillRect(x0 + .05 * sc, Y(1.56), .08 * sc, .03 * sc); }
+  for (const [key, side] of [["L", -1], ["R", 1]]) {
+    const [t1, t2, hand] = a[key];
+    const shx = x0 + side * .2 * sc, shy = Y(1.4);
+    const ex = shx + side * Math.sin(t1) * .3 * sc, ey = shy + Math.cos(t1) * .3 * sc;
+    const hx = ex + side * Math.sin(t2) * .28 * sc, hy = ey + Math.cos(t2) * .28 * sc;
+    ctx.strokeStyle = "#18181a"; ctx.lineWidth = .1 * sc;
+    ctx.beginPath(); ctx.moveTo(shx, shy); ctx.lineTo(ex, ey); ctx.lineTo(hx, hy); ctx.stroke();
+    ctx.fillStyle = "#d9a882"; ctx.beginPath(); ctx.arc(hx, hy, .045 * sc, 0, 7); ctx.fill();
+    if (hand === 3 || hand === 4) { ctx.fillStyle = hand === 3 ? "#ffd21f" : "#e0262b"; ctx.fillRect(hx - .06 * sc, hy - .22 * sc, .12 * sc, .17 * sc); ctx.strokeStyle = "rgba(0,0,0,.35)"; ctx.lineWidth = 1; ctx.strokeRect(hx - .06 * sc, hy - .22 * sc, .12 * sc, .17 * sc); }
+  }
+  // VAR: the referee draws a screen in the air
+  if (a.box) { ctx.strokeStyle = "rgba(255,255,255,.8)"; ctx.lineWidth = 2; ctx.strokeRect(x0 - .45 * sc, Y(2.45), .9 * sc, .55 * sc); }
+  ctx.restore();
+}
+function drawFlag(fl, x, y, w, h) {
+  ctx.save(); ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip();
+  if (fl.v) fl.v.forEach((c, i) => { ctx.fillStyle = c; ctx.fillRect(x + i * w / 3, y, w / 3 + .5, h); });
+  else if (fl.h) fl.h.forEach((c, i) => { ctx.fillStyle = c; ctx.fillRect(x, y + i * h / 3, w, h / 3 + .5); });
+  else if (fl.bra) { ctx.fillStyle = "#009c3b"; ctx.fillRect(x, y, w, h); ctx.fillStyle = "#ffdf00"; ctx.beginPath(); ctx.moveTo(x + w * .08, y + h / 2); ctx.lineTo(x + w / 2, y + h * .1); ctx.lineTo(x + w * .92, y + h / 2); ctx.lineTo(x + w / 2, y + h * .9); ctx.closePath(); ctx.fill(); ctx.fillStyle = "#002776"; ctx.beginPath(); ctx.arc(x + w / 2, y + h / 2, h * .22, 0, 7); ctx.fill(); }
+  else if (fl.eng) { ctx.fillStyle = "#fff"; ctx.fillRect(x, y, w, h); ctx.fillStyle = "#ce1124"; ctx.fillRect(x + w * .42, y, w * .16, h); ctx.fillRect(x, y + h * .38, w, h * .24); }
+  else if (fl.arg) { ctx.fillStyle = "#74acdf"; ctx.fillRect(x, y, w, h); ctx.fillStyle = "#fff"; ctx.fillRect(x, y + h / 3, w, h / 3); ctx.fillStyle = "#f6b40e"; ctx.beginPath(); ctx.arc(x + w / 2, y + h / 2, h * .12, 0, 7); ctx.fill(); }
+  ctx.restore();
+  ctx.strokeStyle = "rgba(0,0,0,.4)"; ctx.lineWidth = 1; ctx.strokeRect(x, y, w, h);
+}
+// One footballer: pose (local), rotation about the hip, hip position in the world, facing
+function drawFigure(p, rot, hx, hy, face, kit, look, opts) {
+  opts = opts || {};
+  const W = pt => { const r = rotAbout(pt, p.hip, rot); return [sx(hx + face * (r[0] - p.hip[0])), sy(hy + (r[1] - p.hip[1]))]; };
+  const fk = ik(p.hip, p.ff, .47, .47, 1), bk = ik(p.hip, p.bf, .47, .47, 1);
+  const fe = ik(p.sh, p.fh, .3, .29, -1), be = ik(p.sh, p.bh, .3, .29, -1);
+  const limb = (pts, w, col, out) => {
+    ctx.lineCap = "round"; ctx.lineJoin = "round";
+    ctx.beginPath(); const a = W(pts[0]); ctx.moveTo(a[0], a[1]); for (let i = 1; i < pts.length; i++) { const b = W(pts[i]); ctx.lineTo(b[0], b[1]); }
+    if (out) { ctx.strokeStyle = out; ctx.lineWidth = w * S + 2; ctx.stroke(); }
+    ctx.strokeStyle = col; ctx.lineWidth = w * S; ctx.stroke();
+  };
+  const L = (a, b, k) => [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k];
+  const leg = (k, ft, back) => {
+    limb([L(k, ft, .12), L(k, ft, .9)], .1, back ? shadeOf(kit.socks) : kit.socks);
+    limb([L(p.hip, k, .55), L(k, ft, .14)], .095, look.skin);
+    limb([p.hip, L(p.hip, k, .6)], .17, back ? shadeOf(kit.shorts) : kit.shorts, "rgba(0,0,0,.25)");
+    const a = W(L(k, ft, .9)), b = W(ft), tip = W([ft[0] + .16, ft[1] + .02]);
+    ctx.strokeStyle = opts.boot || "#151515"; ctx.lineWidth = .085 * S; ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.lineTo(tip[0], tip[1]); ctx.stroke();
+  };
+  const arm = (e, h, back) => {
+    limb([p.sh, L(p.sh, e, .7)], .12, back ? kit.shade : kit.shirt, "rgba(0,0,0,.25)");
+    limb([L(p.sh, e, .6), e, h], .07, opts.long ? (back ? kit.shade : kit.shirt) : look.skin);
+    const q = W(h); ctx.fillStyle = opts.glove || look.skin; ctx.beginPath(); ctx.arc(q[0], q[1], (opts.glove ? .065 : .045) * S, 0, 7); ctx.fill();
+  };
+  arm(be, p.bh, true);
+  leg(bk, p.bf, true);
+  // the shirt
+  const u = [p.sh[0] - p.hip[0], p.sh[1] - p.hip[1]], ul = Math.hypot(u[0], u[1]) || 1; u[0] /= ul; u[1] /= ul;
+  const n = [u[1], -u[0]];
+  const off = (pt, a, b) => [pt[0] + n[0] * a + u[0] * b, pt[1] + n[1] * a + u[1] * b];
+  const tq = [off(p.hip, -.15, .02), off(p.hip, .15, .02), off(p.sh, .14, .03), off(p.sh, -.15, .03)];
+  const path = () => { ctx.beginPath(); tq.forEach((q, i) => { const s = W(q); i ? ctx.lineTo(s[0], s[1]) : ctx.moveTo(s[0], s[1]); }); ctx.closePath(); };
+  path(); ctx.lineJoin = "round"; ctx.strokeStyle = "rgba(0,0,0,.3)"; ctx.lineWidth = 3; ctx.stroke(); ctx.fillStyle = kit.shirt; ctx.fill();
+  if (kit.stripe || kit.hoop) {
+    ctx.save(); path(); ctx.clip(); ctx.strokeStyle = kit.stripe || kit.hoop; ctx.lineWidth = .07 * S;
+    if (kit.stripe) for (const a of [-.08, .06]) { const s0 = W(off(p.hip, a, 0)), s1 = W(off(p.sh, a, .05)); ctx.beginPath(); ctx.moveTo(s0[0], s0[1]); ctx.lineTo(s1[0], s1[1]); ctx.stroke(); }
+    else for (const b of [.12, .3]) { const s0 = W(off(p.hip, -.2, b)), s1 = W(off(p.hip, .2, b)); ctx.lineWidth = .08 * S; ctx.beginPath(); ctx.moveTo(s0[0], s0[1]); ctx.lineTo(s1[0], s1[1]); ctx.stroke(); }
+    ctx.restore();
+  }
+  limb([off(p.sh, -.12, .03), off(p.sh, .1, .03)], .03, kit.trim);
+  if (opts.num) {
+    const c = W(off(p.hip, -.02, .3)); ctx.save(); ctx.translate(c[0], c[1]); ctx.rotate(-rot * face); ctx.font = `400 ${Math.round(.16 * S)}px ${DISPLAY}`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillStyle = kit.trim === kit.shirt ? "#fff" : kit.trim; ctx.fillText(opts.num, 0, 0); ctx.restore();
+  }
+  leg(fk, p.ff, false);
+  // head with the hair on the back
+  const hd = W(p.hd), r = .115 * S;
+  const bk0 = [-1, .45], c = Math.cos(rot), s = Math.sin(rot);
+  const bkv = [c * bk0[0] - s * bk0[1], s * bk0[0] + c * bk0[1]];
+  const ang = Math.atan2(-bkv[1], face * bkv[0]);
+  ctx.fillStyle = look.skin; ctx.beginPath(); ctx.arc(hd[0], hd[1], r, 0, 7); ctx.fill();
+  ctx.fillStyle = look.hair; ctx.beginPath(); ctx.arc(hd[0], hd[1], r * 1.05, ang - 1.45, ang + 1.45); ctx.closePath(); ctx.fill();
+  arm(fe, p.fh, false);
+  if (p.tea) {
+    const h = W(p.fh); ctx.fillStyle = "#fbfbf7"; ctx.strokeStyle = "#8e98a5"; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(h[0] - 6, h[1] - 9); ctx.lineTo(h[0] + 6, h[1] - 9); ctx.lineTo(h[0] + 4.5, h[1]); ctx.lineTo(h[0] - 4.5, h[1]); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.arc(h[0] + 7, h[1] - 5, 2.6, -1.4, 1.4); ctx.stroke();
+    ctx.strokeStyle = "rgba(255,255,255,.5)"; ctx.beginPath(); const st = G.t * 6;
+    ctx.moveTo(h[0], h[1] - 11); ctx.quadraticCurveTo(h[0] + 4 * Math.sin(st), h[1] - 17, h[0] - 2, h[1] - 24); ctx.stroke();
+  }
+}
+function shadeOf(hex) {
+  const n = parseInt(hex.slice(1), 16), k = .78;
+  return `rgb(${Math.round((n >> 16) * k)},${Math.round(((n >> 8) & 255) * k)},${Math.round((n & 255) * k)})`;
+}
+function drawPlayer(f) {
+  if (isOff(f)) return;
+  const p = poseOf(f);
+  const lying = p.lying;
+  const hx = f.x + f.face * p.hip[0], hy = f.y + p.hip[1];
+  ctx.fillStyle = "rgba(0,0,0,.25)"; ctx.beginPath(); ctx.ellipse(sx(f.x), FLOOR + 3, (lying || (f.act && f.act.type === "slide") ? .7 : .38) * S, .07 * S, 0, 0, 7); ctx.fill();
+  drawFigure(p, 0, hx, hy, f.face, f.kit, f.look, { num: f.side ? "9" : "10" });
+  // auras
+  if (G.t < f.braUntil || f.gerArmed) {
+    const c = [sx(f.x), sy(f.y + 1)]; ctx.strokeStyle = `rgba(255,210,87,${.35 + .25 * Math.sin(G.t * 10)})`; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.ellipse(c[0], c[1], .6 * S, 1.05 * S, 0, 0, 7); ctx.stroke();
+  }
+  // the wind-up meter
+  if (f.charge >= 0) {
+    const k = clamp(f.charge / .7, 0, 1), x = sx(f.x) - 22, y = sy(f.y + 2.15);
+    ctx.fillStyle = "rgba(0,0,0,.55)"; roundRect(x - 2, y - 2, 48, 10, 4); ctx.fill();
+    ctx.fillStyle = k > .85 ? "#e5484d" : k > .55 ? "#ffd257" : "#7be08a"; roundRect(x, y, 44 * k, 6, 3); ctx.fill();
+  }
+  // whose player is whose in a 2-player game
+  if (!G.demo && (settings.mode === "2p" || f.human) && G.state !== "goal") {
+    const x = sx(f.x), y = sy(f.y + 2.05) - (f.charge >= 0 ? 16 : 0);
+    ctx.fillStyle = f.kit.shirt; ctx.strokeStyle = "rgba(0,0,0,.5)"; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(x - 6, y - 8); ctx.lineTo(x + 6, y - 8); ctx.lineTo(x, y); ctx.closePath(); ctx.fill(); ctx.stroke();
+  }
+}
+function drawKeeper(k) {
+  const p = keeperPose(k), face = k.A, drop = p.drop || 0;
+  const hx = k.x, hy = k.y + p.hip[1] - drop;
+  ctx.fillStyle = "rgba(0,0,0,.25)"; ctx.beginPath(); ctx.ellipse(sx(k.x), FLOOR + 3, (Math.abs(p.rot) > .8 ? .8 : .4) * S, .07 * S, 0, 0, 7); ctx.fill();
+  drawFigure(p, p.rot, hx, hy, face, k.kit, k.look, { glove: k.kit.glove, long: true, num: "1" });
+}
+function drawBall() {
+  const b = G.ball, x = sx(b.x), y = sy(b.y), r = R * S * 1.15;
+  const hh = clamp(1 - b.y / 6, .3, 1);
+  ctx.fillStyle = `rgba(0,0,0,${.3 * hh})`; ctx.beginPath(); ctx.ellipse(x, FLOOR + 3, r * 1.1 * hh, r * .35 * hh, 0, 0, 7); ctx.fill();
+  ctx.save(); ctx.translate(x, y); ctx.rotate(b.rot);
+  ctx.fillStyle = "#f7f7f2"; ctx.beginPath(); ctx.arc(0, 0, r, 0, 7); ctx.fill();
+  ctx.save(); ctx.clip();
+  ctx.fillStyle = "#1b1b1d";
+  const pent = (cx, cy, rr) => { ctx.beginPath(); for (let i = 0; i < 5; i++) { const a = -Math.PI / 2 + i * Math.PI * 2 / 5; ctx[i ? "lineTo" : "moveTo"](cx + Math.cos(a) * rr, cy + Math.sin(a) * rr); } ctx.closePath(); ctx.fill(); };
+  pent(0, 0, r * .36);
+  for (let i = 0; i < 5; i++) { const a = -Math.PI / 2 + i * Math.PI * 2 / 5; pent(Math.cos(a) * r * 1.02, Math.sin(a) * r * 1.02, r * .34); }
+  ctx.restore();
+  ctx.strokeStyle = "rgba(0,0,0,.35)"; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(0, 0, r, 0, 7); ctx.stroke();
+  ctx.restore();
+  // shading
+  const g = ctx.createRadialGradient(x - r * .4, y - r * .4, 1, x, y, r); g.addColorStop(0, "rgba(255,255,255,.25)"); g.addColorStop(1, "rgba(0,0,0,.2)");
+  ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill();
+}
+// Starter help: what to do next, under your player
+function drawHint(f) {
+  if (isOff(f) || G.state !== "play") return;
+  const b = G.ball, o = other(f);
+  let txt = "", hot = false;
+  if (b.owner === f) { const d = Math.abs(f.A * HL - f.x); if (d < 18) { txt = "SHOOT!"; hot = true; } else txt = f.A > 0 ? "RUN TO GOAL ▶" : "◀ RUN TO GOAL"; }
+  else if (b.owner === o) txt = "RUN INTO THEM TO WIN IT";
+  else if (canKick(f) || canVolley(f)) { txt = "SHOOT!"; hot = true; }
+  if (!txt) return;
+  const x = sx(f.x), y = FLOOR + 30;
+  ctx.save(); ctx.font = `700 16px ${BODY}`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.fillStyle = hot ? `rgba(255,210,87,${.75 + .25 * Math.sin(G.t * 10)})` : "#d8e6dc"; ctx.fillText(txt, x, y);
+  ctx.restore();
+}
+// a marker at the screen edge for a player out of view
+function drawEdge(f) {
+  if (isOff(f) || G.demo) return;
+  const x = sx(f.x);
+  if (x > 10 && x < VW - 10) return;
+  const ex = x < 10 ? 18 : VW - 18, d = x < 10 ? -1 : 1, y = FLOOR - 40;
+  ctx.fillStyle = f.kit.shirt; ctx.strokeStyle = "rgba(0,0,0,.6)"; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(ex + d * 10, y); ctx.lineTo(ex - d * 6, y - 10); ctx.lineTo(ex - d * 6, y + 10); ctx.closePath(); ctx.fill(); ctx.stroke();
+}
+function drawBoard() {
+  const cx = VW / 2, y = 12, w = 620, h = 56, x0 = cx - w / 2;
+  ctx.fillStyle = "rgba(8,14,11,.93)"; ctx.strokeStyle = "rgba(236,244,240,.18)"; ctx.lineWidth = 1.5;
+  roundRect(x0, y, w, h, 10); ctx.fill(); ctx.stroke();
+  ctx.textBaseline = "middle";
+  for (const f of G.P) {
+    const s = f.side, dir = s ? -1 : 1, edge = s ? x0 + w : x0;
+    ctx.fillStyle = f.kit.shirt; roundRect(s ? edge - 14 : edge + 6, y + 6, 8, h - 12, 3); ctx.fill();
+    let tx = edge + dir * 22;
+    if (f.nat && f.nat.flag) { drawFlag(f.nat.flag, s ? tx - 27 : tx, y + 19, 27, 18); tx += dir * 36; }
+    ctx.textAlign = s ? "right" : "left"; ctx.fillStyle = "#eef4f0"; ctx.font = `700 21px ${BODY}`;
+    ctx.fillText(f.label.toUpperCase(), tx, y + h / 2 + 1, 150);
+    ctx.textAlign = "center"; ctx.font = `400 38px ${DISPLAY}`; ctx.fillStyle = "#eef4f0";
+    ctx.fillText(String(G.score[s]), cx - dir * 70, y + h / 2 + 3);
+    // cards
+    for (let i = 0; i < f.yellow; i++) { ctx.fillStyle = "#ffd21f"; roundRect(cx - dir * 110 - 5 + i * 14 * -dir, y + 16, 10, 16, 2); ctx.fill(); }
+    if (isOff(f)) { ctx.fillStyle = "#e0262b"; roundRect(cx - dir * 112 - 5, y + 16, 10, 16, 2); ctx.fill(); ctx.font = `700 13px ${BODY}`; ctx.fillStyle = "#ff8a8a"; ctx.fillText("OFF " + Math.ceil(f.offUntil - G.t), cx - dir * 112, y + 45); }
+  }
+  ctx.textAlign = "center"; ctx.font = `400 22px ${DISPLAY}`; ctx.fillStyle = "#ffd257";
+  ctx.fillText(G.so ? "PENS" : G.demo ? "–:––" : fmtClock(Math.min(G.clock, G.total)), cx, y + 22);
+  ctx.font = `700 13px ${BODY}`; ctx.fillStyle = "#a3b5aa";
+  ctx.fillText(G.so ? "SHOOT-OUT" : G.demo ? "DEMO" : "MATCH " + CMINS() + " MIN", cx, y + 44);
+  // shoot-out tally
+  if (G.so) {
+    const so = G.so, ty = y + h + 18;
+    ctx.fillStyle = "rgba(8,14,11,.85)"; roundRect(cx - 170, ty - 13, 340, 26, 8); ctx.fill();
+    for (const s of [0, 1]) {
+      const n = Math.max(so.n, so.kicks[0].length, so.kicks[1].length);
+      for (let i = 0; i < n; i++) {
+        const k = so.kicks[s][i], x = s ? cx + 20 + i * 18 : cx - 20 - (n - 1 - i) * 18;
+        ctx.beginPath(); ctx.arc(x, ty, 6, 0, 7);
+        if (k === undefined) { ctx.strokeStyle = "rgba(236,244,240,.4)"; ctx.lineWidth = 1.5; ctx.stroke(); }
+        else { ctx.fillStyle = k ? "#48c75a" : "#e5484d"; ctx.fill(); }
+      }
+    }
+  }
+  // powers under the board
+  for (const f of G.P) {
+    if (!f.nat || !f.nat.power) continue;
+    const ready = canPower(f), xx = f.side ? x0 + w + 10 : x0 - 10;
+    ctx.textAlign = f.side ? "left" : "right"; ctx.font = `700 15px ${BODY}`;
+    ctx.fillStyle = f.charges <= 0 ? "rgba(163,181,170,.45)" : ready ? `rgba(255,210,87,${.65 + .35 * Math.sin(G.t * 8)})` : "#c9a94a";
+    ctx.fillText(`★ ${f.nat.power.toUpperCase()} ×${f.charges}`, xx, y + 20);
+    ctx.fillStyle = "#a3b5aa"; ctx.font = `600 14px ${BODY}`;
+    ctx.fillText(f.kit.name, xx, y + 42);
+  }
+  // caption or superpower note
+  const nt = G.note && G.t < G.note.until ? G.note : null;
+  const c = G.caption && G.t < G.capUntil ? G.caption : null;
+  let cy = y + h + (G.so ? 40 : 12);
+  for (const it of [c && { big: c.big, small: c.small }, nt && { big: nt.title, small: nt.en, gold: true }]) {
+    if (!it) continue;
+    ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
+    const maxW = VW - 48;
+    let fs = it.gold ? 20 : 28; ctx.font = `400 ${fs}px ${DISPLAY}`;
+    while (fs > 14 && ctx.measureText(it.big).width > maxW - 40) { fs -= 1; ctx.font = `400 ${fs}px ${DISPLAY}`; }
+    const w1 = Math.min(maxW, Math.max(ctx.measureText(it.big).width, measure(it.small, `600 19px ${BODY}`)) + 48);
+    const bh = it.small ? (it.gold ? 62 : 74) : 46;
+    ctx.fillStyle = it.gold ? "rgba(40,30,6,.85)" : "rgba(8,14,11,.84)"; roundRect(cx - w1 / 2, cy, w1, bh, 10); ctx.fill();
+    if (it.gold) { ctx.strokeStyle = "rgba(255,210,87,.6)"; ctx.lineWidth = 1.5; ctx.stroke(); }
+    ctx.fillStyle = it.gold ? "#ffd257" : "#eef4f0"; ctx.font = `400 ${fs}px ${DISPLAY}`; ctx.fillText(it.big, cx, cy + (it.gold ? 30 : 36));
+    if (it.small) { ctx.font = `600 19px ${BODY}`; ctx.fillStyle = "#c3d0c8"; ctx.fillText(it.small, cx, cy + (it.gold ? 52 : 63), maxW - 24); }
+    cy += bh + 8;
+  }
+  ctx.textBaseline = "middle";
+}
+function measure(t, font) { ctx.font = font; return ctx.measureText(t || "").width; }
+function roundRect(x, y, w, h, r) { r = Math.max(0, Math.min(r, w / 2, h / 2)); ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+
+// ---------- the penalty view ----------
+function drawFrontFigure(x, y, hpx, rot, kit, look, o) {
+  // a footballer seen from the front (keeper) or the back (taker); y is the feet
+  const u = hpx / 1.85;
+  ctx.save(); ctx.translate(x, y); ctx.rotate(rot); ctx.lineCap = "round"; ctx.lineJoin = "round";
+  const ln = (pts, w, col) => { ctx.strokeStyle = col; ctx.lineWidth = w * u; ctx.beginPath(); pts.forEach((q, i) => ctx[i ? "lineTo" : "moveTo"](q[0] * u, -q[1] * u)); ctx.stroke(); };
+  const spread = o.spread || 0, crouch = o.crouch || 0, armsUp = o.armsUp || 0;
+  for (const s of [-1, 1]) {
+    const fx = s * (.16 + spread * .25), kx = s * (.13 + spread * .15);
+    ln([[kx, .5 - crouch * .1], [fx, .08]], .11, kit.socks);
+    ln([[s * .1, .9 - crouch * .15], [kx, .5 - crouch * .1]], .12, look.skin);
+    ln([[fx, .08], [fx + s * .03, 0]], .12, "#151515");
+  }
+  ctx.fillStyle = kit.shorts; ctx.fillRect(-.22 * u, -(.95 - crouch * .15) * u, .44 * u, .32 * u);
+  ctx.fillStyle = kit.shirt; ctx.beginPath(); ctx.moveTo(-.24 * u, -(.9 - crouch * .15) * u); ctx.lineTo(.24 * u, -(.9 - crouch * .15) * u); ctx.lineTo(.27 * u, -(1.48 - crouch * .15) * u); ctx.lineTo(-.27 * u, -(1.48 - crouch * .15) * u); ctx.closePath(); ctx.fill();
+  if (kit.stripe) { ctx.fillStyle = kit.stripe; for (const a of [-.14, 0, .14]) ctx.fillRect((a - .035) * u, -(1.48 - crouch * .15) * u, .07 * u, .58 * u); }
+  if (kit.hoop) { ctx.fillStyle = kit.hoop; for (const b of [1.05, 1.25]) ctx.fillRect(-.25 * u, -(b - crouch * .15) * u, .5 * u, .08 * u); }
+  if (o.num) { ctx.font = `400 ${Math.round(.3 * u)}px ${DISPLAY}`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillStyle = kit.trim === kit.shirt ? "#fff" : kit.trim; ctx.fillText(o.num, 0, -(1.2 - crouch * .15) * u); }
+  const shy = 1.42 - crouch * .15;
+  for (const s of [-1, 1]) {
+    const ex = s * (.42 + armsUp * -.05), ey = shy - .2 + armsUp * .55, hx = s * (.5 + spread * .1 - armsUp * .12), hy = shy - .45 + armsUp * 1.0;
+    ln([[s * .25, shy], [ex, ey], [hx, hy]], .1, o.long ? kit.shirt : look.skin);
+    ctx.fillStyle = o.glove || look.skin; ctx.beginPath(); ctx.arc(hx * u, -hy * u, (o.glove ? .08 : .05) * u, 0, 7); ctx.fill();
+  }
+  ctx.fillStyle = look.skin; ctx.beginPath(); ctx.arc(0, -(shy + .2) * u, .12 * u, 0, 7); ctx.fill();
+  ctx.fillStyle = look.hair; ctx.beginPath(); ctx.arc(0, -(shy + .22) * u, .125 * u, o.back ? 0 : Math.PI * 1.05, o.back ? Math.PI * 2 : Math.PI * 1.95); ctx.fill();
+  ctx.restore();
+}
+function drawPen() {
+  const p = G.pen, f = G.P[p.s], k = G.K[p.k], kp = G.P[p.k];
+  const cx = VW / 2, GL = 470, gpx = 64, gw = 7.32 * gpx, gh = GH * gpx;
+  drawBackground();
+  // grass toward the goal
+  ctx.fillStyle = "#2c7f39"; ctx.fillRect(0, 380, VW, VH - 380);
+  for (let i = 0; i < 9; i++) { const y0 = 380 + Math.pow(i / 9, 1.6) * 340, y1 = 380 + Math.pow((i + 1) / 9, 1.6) * 340; ctx.fillStyle = i % 2 ? "#2f8a3c" : "#349a43"; ctx.fillRect(0, y0, VW, y1 - y0); }
+  ctx.strokeStyle = "rgba(245,250,245,.85)"; ctx.lineWidth = 2.5;
+  ctx.beginPath(); ctx.moveTo(0, GL); ctx.lineTo(VW, GL); ctx.stroke();
+  const tz = (w0, y) => { ctx.beginPath(); ctx.moveTo(cx - w0, GL); ctx.lineTo(cx - w0 * 1.25, y); ctx.lineTo(cx + w0 * 1.25, y); ctx.lineTo(cx + w0, GL); ctx.stroke(); };
+  tz(gw * .78, 540); tz(gw * 1.9, 712);
+  ctx.fillStyle = "rgba(245,250,245,.95)"; ctx.beginPath(); ctx.ellipse(cx, 640, 6, 3, 0, 0, 7); ctx.fill();
+  // the net
+  const L = cx - gw / 2, Rr = cx + gw / 2, T = GL - gh, bulge = p.phase === "result" && p.res === "goal" ? Math.max(0, 1 - p.t) * 10 : 0;
+  ctx.fillStyle = "rgba(240,245,250,.08)"; ctx.fillRect(L + 24, T + 16 - bulge, gw - 48, gh - 22);
+  ctx.strokeStyle = "rgba(240,245,250,.3)"; ctx.lineWidth = 1;
+  for (let x = L + 24; x <= Rr - 24; x += 16) { ctx.beginPath(); ctx.moveTo(x, T + 16 - bulge); ctx.lineTo(x, GL - 6); ctx.stroke(); }
+  for (let y = T + 16; y <= GL - 6; y += 16) { ctx.beginPath(); ctx.moveTo(L + 24, y - bulge * (1 - (y - T) / gh)); ctx.lineTo(Rr - 24, y - bulge * (1 - (y - T) / gh)); ctx.stroke(); }
+  for (const [a, b] of [[[L, T], [L + 24, T + 16]], [[Rr, T], [Rr - 24, T + 16]], [[L, GL], [L + 24, GL - 6]], [[Rr, GL], [Rr - 24, GL - 6]]]) { ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke(); }
+  // the keeper
+  const fl = p.phase === "flight" ? p.t / .48 : p.phase === "result" ? 1 : 0;
+  const e = ease(Math.min(1, fl * 1.25));
+  let kx = cx, ky = GL + 4, rot = 0, armsUp = 0, crouch = .6;
+  if (fl > 0) {
+    if (p.kcol) { kx += p.kcol * gw * .26 * e; rot = p.kcol * (p.khigh ? 1.05 : 1.38) * e; ky -= (p.khigh ? 52 : 14) * Math.sin(Math.PI * Math.min(1, fl)); armsUp = 1; crouch = 0; }
+    else if (p.khigh) { ky -= 46 * Math.sin(Math.PI * Math.min(1, fl)); armsUp = 1; crouch = 0; }
+    else crouch = .8;
+  } else ky += Math.sin(G.t * 6) * 2;
+  const sway = fl === 0 ? Math.sin(G.t * 2.4) * 10 : 0;
+  drawFrontFigure(kx + sway, ky, 1.88 * gpx, rot, k.kit, k.look, { glove: k.kit.glove, long: true, armsUp, crouch, spread: fl > 0 ? .5 : .3, num: "1" });
+  // posts and bar
+  ctx.fillStyle = "#f4f6f8"; ctx.fillRect(L - 5, T - 5, 6, gh + 5); ctx.fillRect(Rr - 1, T - 5, 6, gh + 5); ctx.fillRect(L - 5, T - 5, gw + 10, 6);
+  // the ball
+  const tx = cx + p.aim * gw * .37, ty = GL - (p.high ? 1.95 : .45) * gpx;
+  let bx = cx, by = 640, br = 13;
+  if (p.phase === "flight" || p.phase === "result") {
+    let ex = tx, ey = ty;
+    if (p.res === "miss") { if (p.missKind === "over") ey = T - 44; else if (p.missKind === "wide") ex = cx + (p.aim || 1) * (gw / 2 + 40); else { ex = cx + (p.aim || 1) * gw / 2; ey = p.high ? T + 10 : GL - 40; } }
+    if (p.res === "save") { ex = lerp(cx, tx, .8); ey = lerp(GL, ty, .9); }
+    const kk = Math.min(1, fl);
+    bx = lerp(cx, ex, kk); by = lerp(640, ey, kk) - Math.sin(Math.PI * kk) * (p.high ? 34 : 14); br = lerp(13, 7.5, kk);
+    if (p.phase === "result") {
+      const t2 = Math.min(1, p.t * 1.4);
+      if (p.res === "save") { bx = ex + (p.aim || .4) * 40 * t2; by = ey + (GL + 30 - ey) * t2 - Math.sin(Math.PI * t2) * 30; }
+      else if (p.res === "miss" && p.missKind === "post") { bx = ex - (p.aim || 1) * 60 * t2; by = ey + 90 * t2; }
+      else if (p.res === "goal") { by = Math.min(GL - 8, ey + 40 * t2 * t2); }
+    }
+  }
+  ctx.fillStyle = "rgba(0,0,0,.3)"; ctx.beginPath(); ctx.ellipse(bx, Math.max(by + br, p.phase === "aim" || p.phase === "run" ? 640 + br * .8 : GL + 2), br, br * .3, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = "#f7f7f2"; ctx.beginPath(); ctx.arc(bx, by, br, 0, 7); ctx.fill();
+  ctx.fillStyle = "#1b1b1d"; ctx.beginPath(); ctx.arc(bx, by, br * .35, 0, 7); ctx.fill();
+  // the taker, from behind
+  const run = p.phase === "run" ? ease(p.t / .55) : p.phase === "aim" ? 0 : 1;
+  drawFrontFigure(lerp(cx - 120, cx - 34, run), lerp(VH + 30, 668, run), 260, -.08 * run, f.kit, f.look, { back: true, num: f.side ? "9" : "10" });
+  // aim marker for a human taker
+  if (f.human && p.phase === "aim") {
+    ctx.strokeStyle = `rgba(255,210,87,${.6 + .3 * Math.sin(G.t * 8)})`; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(tx, ty, 18, 0, 7); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(tx - 26, ty); ctx.lineTo(tx - 10, ty); ctx.moveTo(tx + 10, ty); ctx.lineTo(tx + 26, ty); ctx.moveTo(tx, ty - 26); ctx.lineTo(tx, ty - 10); ctx.moveTo(tx, ty + 10); ctx.lineTo(tx, ty + 26); ctx.stroke();
+  }
+  // how to play it
+  if (!G.demo && p.phase === "aim") {
+    const two = settings.mode === "2p", keysOf = s => touchSeen ? null : two ? (s ? ["◀ ▶", "↑", "↓"] : ["A D", "W", "S"]) : ["◀ ▶ / A D", "↑ / W", "↓ / S"];
+    const lines = [];
+    if (f.human) { const k2 = keysOf(p.s); lines.push(k2 ? `${f.label}: aim with ${k2[0]}, hold ${k2[1]} for high, ${k2[2]} to shoot` : `${f.label}: aim with ◀ ▶, hold Jump for high, then Shoot`); }
+    if (kp.human) { const k2 = keysOf(p.k); lines.push(k2 ? `${kp.label} in goal: hold ${k2[0].split(" / ")[0]} to dive, ${k2[1].split(" / ")[0]} to go high` : `${kp.label} in goal: hold ◀ or ▶ to dive, Jump to go high`); }
+    ctx.textAlign = "center"; ctx.font = `700 19px ${BODY}`;
+    lines.forEach((t, i) => { const yy = 196 + i * 30; const w1 = measure(t, `700 19px ${BODY}`) + 30; ctx.fillStyle = "rgba(8,14,11,.8)"; roundRect(cx - w1 / 2, yy - 13, w1, 26, 8); ctx.fill(); ctx.fillStyle = "#eef4f0"; ctx.fillText(t, cx, yy + 1); });
+  }
+}
+
+let dpr = 1, kS = 1, offY = 0;
+function resize() {
+  dpr = Math.min(2, window.devicePixelRatio || 1);
+  const w = cv.clientWidth || innerWidth, h = cv.clientHeight || innerHeight;
+  cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
+  kS = h / VH; VW = w / kS;
+  if (VW < 960) { VW = 960; kS = w / VW; }
+  offY = (h - VH * kS) / 2;
+  $("rotate").hidden = !(h > w && touchSeen);
+}
+function render() {
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.fillStyle = "#0e1a14"; ctx.fillRect(0, 0, cv.width, cv.height);
+  const shx = G.shake > 0 ? (Math.random() - .5) * 10 * G.shake : 0, shy = G.shake > 0 ? (Math.random() - .5) * 8 * G.shake : 0;
+  ctx.setTransform(dpr * kS, 0, 0, dpr * kS, dpr * shx, dpr * (offY + shy));
+  if (G.state === "pen" && G.pen) { drawPen(); drawBoard(); return; }
+  drawBackground();
+  drawPitch();
+  drawGoalBack(-1); drawGoalBack(1);
+  drawReferee();
+  for (const k of G.K) drawKeeper(k);
+  const order = [...G.P].sort((a, b) => (G.ball.owner === a ? 1 : 0) - (G.ball.owner === b ? 1 : 0));
+  for (const f of order) drawPlayer(f);
+  drawBall();
+  drawGoalFront(-1); drawGoalFront(1);
+  if (!EXPERT() && !G.demo) for (const f of G.P) if (f.human) drawHint(f);
+  for (const f of G.P) drawEdge(f);
+  drawBoard();
+}
+
+// ---------- loop ----------
+let last = 0, acc = 0, paused = false;
+const DT = 1 / 120;
+function frame(t) {
+  const el = Math.min(.1, (t - last) / 1000 || 0); last = t;
+  if (!paused && G.state !== "over") { acc += el; while (acc >= DT) { step(DT); acc -= DT; } }
+  render();
+  requestAnimationFrame(frame);
+}
+
+// ---------- end of the match ----------
+function gameOver() {
+  G.state = "over";
+  const [A, B] = G.P, w = G.winner;
+  const two = settings.mode === "2p";
+  $("overEyebrow").textContent = G.endWhy;
+  $("overTitle").textContent = two ? `${G.P[w].label} wins` : w === 0 ? "You win" : "The bot wins";
+  $("fs1").textContent = G.score[0]; $("fs2").textContent = G.score[1];
+  const st = f => `${f.stats.shots} shot${f.stats.shots === 1 ? "" : "s"}, ${f.stats.target} on target, ${f.stats.tackles} tackle${f.stats.tackles === 1 ? "" : "s"} won, ${f.stats.fouls} foul${f.stats.fouls === 1 ? "" : "s"}`;
+  $("overStats").textContent = `${A.label}: ${st(A)}. ${B.label}: ${st(B)}.`;
+  $("overOv").hidden = false; $("hudBtns").hidden = true; setTouch(false);
+}
+
+// ---------- menu & overlays ----------
+function syncMenu() {
+  for (const b of $("modeSeg").children) b.setAttribute("aria-pressed", String(b.dataset.mode === settings.mode));
+  for (const b of $("levelSeg").children) b.setAttribute("aria-pressed", String(b.dataset.level === settings.level));
+  for (const id of ["kit1", "kit2"]) {
+    const el = $(id);
+    if (!el.options.length) el.innerHTML = KIT_ORDER.map(k => `<option value="${k}">${KITS[k].name}</option>`).join("");
+    el.value = settings[id];
+  }
+  for (const id of ["nat1", "nat2"]) {
+    const el = $(id);
+    if (!el.options.length) el.innerHTML = NATION_ORDER.map(k => `<option value="${k}">${NATIONS[k].power ? NATIONS[k].name + " · " + NATIONS[k].power : NATIONS[k].name}</option>`).join("");
+    el.value = settings[id];
+  }
+  const kits = kitsFor();
+  document.documentElement.style.setProperty("--home", kits[0].shirt === "#f3f3f0" ? "#f3f3f0" : kits[0].shirt);
+  document.documentElement.style.setProperty("--away", kits[1].shirt);
+  $("natdesc").textContent = [settings.nat1, settings.nat2].filter((k, i, a) => NATIONS[k].power && a.indexOf(k) === i).map(k => NATIONS[k].desc).join(" ") || "Pure football, no tricks.";
+  $("kit1").setAttribute("aria-label", settings.mode === "2p" ? "Player 1 kit" : "Your kit");
+  $("kit2").setAttribute("aria-label", settings.mode === "2p" ? "Player 2 kit" : "Bot's kit");
+  for (const b of $("lenSeg").children) b.setAttribute("aria-pressed", String(+b.dataset.mins === settings.mins));
+  $("levelField").hidden = settings.mode !== "bot";
+  for (const b of $("skillSeg").children) b.setAttribute("aria-pressed", String(b.dataset.skill === settings.skill));
+  for (const id of ["kitField", "natField", "lenField"]) $(id).hidden = !EXPERT();
+  $("skilldesc").textContent = EXPERT() ? "Wind up your own shots, slide tackles, cards, kits, superpowers and matches up to 5 minutes." : "New to the game? Run, jump and shoot. Your shot aims itself at the goal, matches last 2 minutes, and a hint says what to do next.";
+  if (!EXPERT()) {
+    const basics = "Run into the ball to take it, and run into your opponent to win it back. Shoot when you're close: the shot goes at the goal by itself, and the keeper may still save it. Jump to head a high ball. Level at full time? Penalties: pick a side and shoot, or dive the right way in goal.";
+    if (touchSeen) $("keys").innerHTML = `<div><b>Touch</b>◀ ▶ run, <b style="display:inline">Jump</b> heads the ball, <b style="display:inline">Shoot</b> shoots.</div><div><b>How to score</b>${basics}</div>`;
+    else if (settings.mode === "2p") $("keys").innerHTML = `<div class="t1"><b>Player 1 (left)</b><kbd>A</kbd> <kbd>D</kbd> run · <kbd>W</kbd> jump · <kbd>S</kbd> shoot</div><div class="t2"><b>Player 2 (right)</b><kbd>←</kbd> <kbd>→</kbd> run · <kbd>↑</kbd> jump · <kbd>↓</kbd> shoot</div><div style="grid-column:1/-1"><b>How to score</b>${basics}</div>`;
+    else $("keys").innerHTML = `<div class="t1"><b>You (left)</b><kbd>A</kbd> <kbd>D</kbd> or <kbd>←</kbd> <kbd>→</kbd> run · <kbd>W</kbd>/<kbd>↑</kbd> jump · <kbd>S</kbd>/<kbd>↓</kbd> shoot · <kbd>P</kbd> pause</div><div><b>How to score</b>${basics}</div>`;
+    return;
+  }
+  const moves = "Hold Shoot to wind up and let go to strike: a short wind-up keeps it low, a long one lifts it, too long and it flies over the bar. Shoot a ball in the air for a volley, jump into it for a header. Slide in to take the ball; hit the player first and it's a foul, in your own box a penalty. Tackles from behind are a yellow card, and two yellows send you off for 15 seconds.";
+  if (touchSeen) {
+    $("keys").innerHTML = `<div><b>Touch</b>◀ ▶ run, <b style="display:inline">Jump</b> for headers, hold <b style="display:inline">Shoot</b> to wind up, <b style="display:inline">Slide</b> tackles, <b style="display:inline">★</b> uses your superpower.</div><div><b>Moves</b>${moves}</div>`;
+  } else if (settings.mode === "2p") {
+    $("keys").innerHTML = `<div class="t1"><b>Player 1 (left)</b><kbd>A</kbd> <kbd>D</kbd> run · <kbd>W</kbd> jump · <kbd>S</kbd> shoot · <kbd>E</kbd> slide · <kbd>Q</kbd> superpower</div><div class="t2"><b>Player 2 (right)</b><kbd>←</kbd> <kbd>→</kbd> run · <kbd>↑</kbd> jump · <kbd>↓</kbd> shoot · <kbd>/</kbd> or right <kbd>Shift</kbd> slide · <kbd>.</kbd> or <kbd>Enter</kbd> superpower</div><div style="grid-column:1/-1"><b>Moves</b>${moves}</div>`;
+  } else {
+    $("keys").innerHTML = `<div class="t1"><b>You (left)</b><kbd>A</kbd> <kbd>D</kbd> or <kbd>←</kbd> <kbd>→</kbd> run · <kbd>W</kbd>/<kbd>↑</kbd> jump · <kbd>S</kbd>/<kbd>↓</kbd> shoot · <kbd>E</kbd>/<kbd>Space</kbd> slide · <kbd>Q</kbd>/<kbd>F</kbd> superpower · <kbd>P</kbd> pause</div><div><b>Moves</b>${moves}</div>`;
+  }
+}
+$("skillSeg").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; settings.skill = b.dataset.skill; saveSettings(); syncMenu(); startGame(true); });
+$("modeSeg").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; settings.mode = b.dataset.mode; saveSettings(); syncMenu(); });
+$("levelSeg").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; settings.level = b.dataset.level; saveSettings(); syncMenu(); });
+for (const id of ["nat1", "nat2"]) $(id).addEventListener("change", e => { settings[id] = e.target.value; saveSettings(); syncMenu(); startGame(true); });
+for (const id of ["kit1", "kit2"]) $(id).addEventListener("change", e => { settings[id] = e.target.value; saveSettings(); syncMenu(); const k = kitsFor(); if (G.P[0]) { G.P[0].kit = k[0]; G.P[1].kit = k[1]; } });
+$("lenSeg").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; settings.mins = +b.dataset.mins; saveSettings(); syncMenu(); });
+$("playBtn").addEventListener("click", () => { initAudio(); startGame(false); });
+$("againBtn").addEventListener("click", () => { initAudio(); startGame(false); });
+$("menuBtn").addEventListener("click", () => { syncMenu(); startGame(true); });
+function togglePause() { paused ? resume() : pauseGame(); }
+function pauseGame() { paused = true; $("pauseOv").hidden = false; try { speechSynthesis.cancel(); } catch (e) {} }
+function resume() { paused = false; $("pauseOv").hidden = true; KEYS_DOWN.clear(); }
+$("pauseBtn").addEventListener("click", pauseGame);
+$("resumeBtn").addEventListener("click", resume);
+$("quitBtn").addEventListener("click", () => { resume(); syncMenu(); startGame(true); });
+function syncMute() { $("muteBtn").textContent = muted ? "✕" : "♪"; $("muteBtn").setAttribute("aria-pressed", String(!muted)); }
+$("muteBtn").addEventListener("click", () => { muted = !muted; try { localStorage.setItem("pitchduel.muted", muted ? "1" : "0"); } catch (e) {} initAudio(); syncMute(); if (muted) try { speechSynthesis.cancel(); } catch (e) {} });
+document.addEventListener("visibilitychange", () => { if (document.hidden && !G.demo && G.state !== "over" && !paused) pauseGame(); });
+addEventListener("resize", resize);
+
+// touch controls
+let touchSeen = matchMedia("(pointer: coarse)").matches;
+addEventListener("touchstart", () => { if (!touchSeen) { touchSeen = true; syncMenu(); resize(); if (!G.demo && G.state !== "over") setTouch(true); } }, { passive: true });
+function setTouch(on) {
+  const el = $("touch");
+  el.innerHTML = "";
+  if (!on || !touchSeen) { el.hidden = true; return; }
+  const btn = (p, act, label, cls) => `<button class="tbtn ${cls || ""}" data-p="${p}" data-act="${act}" aria-label="${act}">${label}</button>`;
+  const pw = p => G.P[p] && G.P[p].nat && G.P[p].nat.power ? btn(p, "power", "★ " + G.P[p].nat.short, "pw") : "<span></span>";
+  if (!EXPERT()) {
+    el.innerHTML = settings.mode === "2p" ?
+      `<div class="pad quad p1" style="grid-template-columns:auto auto">${btn(0, "jump", "Jump")}${btn(0, "kick", "Shoot", "atk")}${btn(0, "left", "◀")}${btn(0, "right", "▶")}</div>` +
+      `<div class="pad quad p2" style="grid-template-columns:auto auto">${btn(1, "kick", "Shoot", "atk")}${btn(1, "jump", "Jump")}${btn(1, "left", "◀")}${btn(1, "right", "▶")}</div>` :
+      `<div class="pad">${btn(0, "left", "◀", "big")}${btn(0, "right", "▶", "big")}</div>` +
+      `<div class="pad">${btn(0, "jump", "Jump", "big")}${btn(0, "kick", "Shoot", "big atk")}</div>`;
+  } else if (settings.mode === "2p") {
+    el.innerHTML =
+      `<div class="pad quad p1">${btn(0, "jump", "Jump")}${btn(0, "kick", "Shoot", "atk")}${btn(0, "tackle", "Slide")}${btn(0, "left", "◀")}${btn(0, "right", "▶")}${pw(0)}</div>` +
+      `<div class="pad quad p2">${btn(1, "tackle", "Slide")}${btn(1, "kick", "Shoot", "atk")}${btn(1, "jump", "Jump")}${pw(1)}${btn(1, "left", "◀")}${btn(1, "right", "▶")}</div>`;
+  } else {
+    el.innerHTML =
+      `<div class="pad">${btn(0, "left", "◀", "big")}${btn(0, "right", "▶", "big")}${pw(0)}</div>` +
+      `<div class="pad">${btn(0, "tackle", "Slide")}${btn(0, "jump", "Jump", "big")}${btn(0, "kick", "Shoot", "big atk")}</div>`;
+  }
+  el.hidden = false;
+}
+const touchEl = $("touch");
+function tdown(e) {
+  const b = e.target.closest(".tbtn"); if (!b) return; e.preventDefault(); initAudio();
+  try { b.setPointerCapture(e.pointerId); } catch (_) {}
+  TOUCH[+b.dataset.p][b.dataset.act] = true; TAPS[+b.dataset.p][b.dataset.act] = true; b.classList.add("on");
+}
+function tup(e) {
+  const b = e.target.closest(".tbtn"); if (!b) return; e.preventDefault();
+  TOUCH[+b.dataset.p][b.dataset.act] = false; b.classList.remove("on");
+}
+touchEl.addEventListener("pointerdown", tdown);
+touchEl.addEventListener("pointerup", tup);
+touchEl.addEventListener("pointercancel", tup);
+touchEl.addEventListener("lostpointercapture", tup);
+touchEl.addEventListener("contextmenu", e => e.preventDefault());
+
+window.__pitch = { G, settings, startGame: d => startGame(d), step: dt => step(dt), usePower: s => usePower(G.P[s]), foul, startPen, render };
+
+// boot
+syncMenu(); syncMute(); resize();
+startGame(true);
+requestAnimationFrame(t => { last = t; frame(t); });
+})();
+</script>
+<script>
+
+</script>
+</body>
+</html>

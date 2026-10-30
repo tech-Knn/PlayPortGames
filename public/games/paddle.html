@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Paddle Duel</title>
+<style>
+  html,body{margin:0;height:100%;background:#191537;display:grid;place-items:center;font-family:system-ui,sans-serif}
+  canvas{max-width:96vw;max-height:96vh;border-radius:14px;touch-action:none;background:#1f1a44}
+</style>
+</head>
+<body>
+<canvas id="c" width="640" height="420"></canvas>
+<script>
+(function(){
+  var P = new URLSearchParams(location.search);
+  var GLYPH = P.get('e') || '●';
+  var TWO = P.get('two') === '1';
+  var ACCENT = P.get('c') || '#6C3BFF';
+  var cv = document.getElementById('c');
+  var x = cv.getContext('2d');
+  var W = cv.width, H = cv.height;
+  var PW = 12, PH = 84, WIN = 7;
+  var L, Rp, ball, sL, sR, running, over, msg;
+  var keys = {};
+
+  function resetBall(toRight){
+    var a = (Math.random()*0.6 - 0.3);
+    var sp = 5;
+    ball = { x: W/2, y: H/2, vx: (toRight?1:-1)*sp*Math.cos(a), vy: sp*Math.sin(a) };
+  }
+
+  function reset(){
+    L = { y: H/2 - PH/2 };
+    Rp = { y: H/2 - PH/2 };
+    sL = 0; sR = 0; over = false; running = false; msg = '';
+    resetBall(Math.random() < 0.5);
+    draw();
+  }
+
+  function update(){
+    if (running && !over){
+      // left paddle: W/S keys or pointer
+      if (keys.KeyW) L.y -= 6;
+      if (keys.KeyS) L.y += 6;
+      // right paddle: arrows (2P) or AI
+      if (TWO){
+        if (keys.ArrowUp) Rp.y -= 6;
+        if (keys.ArrowDown) Rp.y += 6;
+      } else {
+        var target = ball.y - PH/2;
+        var dyAI = target - Rp.y;
+        Rp.y += Math.max(-4.4, Math.min(4.4, dyAI));
+      }
+      L.y = Math.max(0, Math.min(H-PH, L.y));
+      Rp.y = Math.max(0, Math.min(H-PH, Rp.y));
+
+      ball.x += ball.vx; ball.y += ball.vy;
+      if (ball.y < 8 || ball.y > H-8){ ball.vy *= -1; ball.y = Math.max(8, Math.min(H-8, ball.y)); }
+
+      // left paddle hit
+      if (ball.vx < 0 && ball.x < 26 + PW && ball.x > 20 && ball.y > L.y - 8 && ball.y < L.y + PH + 8){
+        bounce(L.y);
+        ball.vx = Math.abs(ball.vx);
+      }
+      // right paddle hit
+      if (ball.vx > 0 && ball.x > W - 26 - PW && ball.x < W - 20 && ball.y > Rp.y - 8 && ball.y < Rp.y + PH + 8){
+        bounce(Rp.y);
+        ball.vx = -Math.abs(ball.vx);
+      }
+      function bounce(py){
+        var rel = (ball.y - (py + PH/2)) / (PH/2);
+        var sp = Math.min(9, Math.hypot(ball.vx, ball.vy) + 0.3);
+        ball.vy = rel * sp * 0.85;
+        var vxMag = Math.sqrt(Math.max(4, sp*sp - ball.vy*ball.vy));
+        ball.vx = (ball.vx < 0 ? -1 : 1) * vxMag;
+      }
+
+      if (ball.x < -14){ sR++; score(); }
+      if (ball.x > W+14){ sL++; score(); }
+      function score(){
+        if (sL >= WIN || sR >= WIN){
+          over = true; running = false;
+          var winner = sL > sR ? (TWO ? 'Left player' : 'You') : (TWO ? 'Right player' : 'The machine');
+          msg = winner + ' wins ' + Math.max(sL,sR) + '–' + Math.min(sL,sR);
+        } else {
+          resetBall(ball.x < 0);
+        }
+      }
+    }
+    draw();
+    requestAnimationFrame(update);
+  }
+
+  function draw(){
+    x.clearRect(0,0,W,H);
+    // center line
+    x.fillStyle = 'rgba(255,255,255,0.12)';
+    for (var yy=10; yy<H; yy+=26) x.fillRect(W/2-2, yy, 4, 14);
+    // paddles
+    x.fillStyle = ACCENT;
+    x.fillRect(22, L.y, PW, PH);
+    x.fillStyle = '#FFB938';
+    x.fillRect(W-22-PW, Rp.y, PW, PH);
+    // ball
+    x.font='22px serif'; x.textAlign='center'; x.textBaseline='middle';
+    if (GLYPH === '●'){
+      x.fillStyle='#fff';
+      x.beginPath(); x.arc(ball.x, ball.y, 9, 0, Math.PI*2); x.fill();
+    } else {
+      x.fillText(GLYPH, ball.x, ball.y);
+    }
+    // scores
+    x.fillStyle='#fff'; x.font='bold 34px system-ui,sans-serif';
+    x.fillText(String(sL), W/2 - 54, 40);
+    x.fillText(String(sR), W/2 + 54, 40);
+    if (!running){
+      x.fillStyle='rgba(20,14,50,0.72)'; x.fillRect(0,0,W,H);
+      x.fillStyle='#fff';
+      x.font='bold 24px system-ui,sans-serif';
+      x.fillText(over ? msg : 'Tap / Space to serve — first to ' + WIN, W/2, H/2 - 14);
+      x.font='15px system-ui,sans-serif'; x.fillStyle='rgba(255,255,255,0.7)';
+      x.fillText(TWO ? 'Left: W/S · Right: ↑/↓' : 'Move: W/S, ↑/↓, mouse or touch', W/2, H/2 + 18);
+    }
+  }
+
+  function go(){
+    if (over) reset();
+    running = true;
+  }
+
+  window.addEventListener('keydown', function(e){
+    keys[e.code] = true;
+    if (['ArrowUp','ArrowDown','Space'].indexOf(e.code) !== -1) e.preventDefault();
+    if (e.code === 'Space') go();
+    // single-player convenience: arrows also drive the left paddle
+    if (!TWO){
+      if (e.code === 'ArrowUp') keys.KeyW = true;
+      if (e.code === 'ArrowDown') keys.KeyS = true;
+    }
+  });
+  window.addEventListener('keyup', function(e){
+    keys[e.code] = false;
+    if (!TWO){
+      if (e.code === 'ArrowUp') keys.KeyW = false;
+      if (e.code === 'ArrowDown') keys.KeyS = false;
+    }
+  });
+  cv.addEventListener('pointerdown', function(e){ e.preventDefault(); go(); });
+  cv.addEventListener('pointermove', function(e){
+    var rect = cv.getBoundingClientRect();
+    var scale = H / rect.height;
+    var my = (e.clientY - rect.top) * scale;
+    L.y = Math.max(0, Math.min(H-PH, my - PH/2));
+  });
+
+  reset();
+  update();
+})();
+</script>
+</body>
+</html>

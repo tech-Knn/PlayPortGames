@@ -1,18 +1,3 @@
-/**
- * Placeholder game catalog.
- *
- * When you license real games (e.g. from GamePix, GameDistribution,
- * GameMonetize or a direct studio deal), replace this static array with a
- * fetch from your own backend / the provider's JSON feed, and fill in:
- *   - `embedUrl`  → the iframe URL the provider gives you per game
- *   - `thumb`     → the provider's thumbnail image URL (swap the CSS
- *                   gradient placeholder in <GameCard/> for an <img/>)
- *
- * Everything else in the UI (routing, grids, search, category pages,
- * the game stage) already keys off this shape, so integration is a
- * data-layer change only.
- */
-
 export const CATEGORIES = [
   { slug: 'action', name: 'Action', emoji: '⚡' },
   { slug: 'puzzle', name: 'Puzzle', emoji: '🧩' },
@@ -28,7 +13,6 @@ export const CATEGORIES = [
   { slug: 'cozy', name: 'Cozy', emoji: '☕' },
 ];
 
-// Gradient pairs used to paint placeholder tile art. Deterministic per game.
 const PALETTES = [
   ['#6C3BFF', '#3B82F6'],
   ['#FF5D8F', '#FFB938'],
@@ -40,52 +24,193 @@ const PALETTES = [
   ['#22C55E', '#A3E635'],
 ];
 
-const raw = [];
-
 const slugify = (s) =>
   s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 
-/**
- * Embed URLs. Right now every entry points at one of six original,
- * self-contained mini-games bundled in /public/games (hopper, serpent,
- * brick, paddle, pairs, tap) — themed per title via URL params
- * (?e=emoji, ?c=%23hexcolor, ?set=..., ?two=1 for local 2-player).
- * When you get licensed games from a provider, replace these values
- * with the provider's iframe URLs. Nothing else needs to change.
- */
-const EMBEDS = {};
+// [title, category, glyph, rating, featured, embedUrl, thumb, blurb]
+const RAW = [
+  // ── Racing ──────────────────────────────────────────────────────────────────
+  ['Kart Royale',       'racing',     '🏎️', 4.6, true,
+    '/games/kart-royale/index.html',
+    '/games/kart-royale/kart-royale.webp',
+    'A full 3D kart racer: drift through corners for boosts, grab item boxes and chase down your rivals on Sunset Bay Circuit.'],
 
-raw.push(['Kart Royale', 'racing', '🏎️', 4.6, 'Ryan Campbell', '0', true,
-  'A full 3D kart racer: drift through corners for boosts, grab item boxes and chase down your rivals on Sunset Bay Circuit.']);
-EMBEDS['kart-royale'] = '/games/kart-royale/index.html';
+  // ── Action ───────────────────────────────────────────────────────────────────
+  ["Saurabh's Sprint",  'action',     '🏃', 4.6, true,
+    '/games/saurabhs-sprint/index.html',
+    '/games/saurabhs-sprint/saurabhs-sprint.webp',
+    'A 3D endless runner: dodge trains, grab coins, outrun the police and unlock new heroes and hoverboards.'],
+  ['Emoji Survivors',   'action',     '🧟', 4.5, true,
+    '/games/emoji-survivors/games/emojiSurvivors.html',
+    '/games/emoji-survivors/emoji-survivors.webp',
+    'Survive endless waves of emoji hordes. Pick up upgrades, chain combos and see how long you can last.'],
+  ['Astroblast',        'action',     '🚀', 4.4, false,
+    '/games/astroblast/games/astroblast.html',
+    '/games/astroblast/astroblast.webp',
+    'Blast through waves of asteroids and enemy ships in this classic arcade shooter.'],
+  ['Neon Breach',       'action',     '⚡', 4.3, false,
+    '/games/neon-breach/index.html',
+    '/games/neon-breach/neon-breach.webp',
+    'Hack through neon-lit corridors, dodge security drones and reach the core.'],
+  ['Tank Combat',       'action',     '🪖', 4.3, false,
+    '/games/tank-combat/games/tankCombat.html',
+    '/games/tank-combat/tank-combat.webp',
+    'Command your tank across battle-scarred maps. Destroy enemy armour before they reach your base.'],
+  ['Space Shooter',     'action',     '🛸', 4.2, false,
+    '/games/space-shooter/index.html',
+    '/games/space-shooter/space-shooter.webp',
+    'Classic top-down space shooter — dodge bullets, collect power-ups and defeat the boss.'],
+  ['Nova Rift',         'action',     '🌌', 4.2, false,
+    '/games/nova-rift/index.html',
+    '/games/nova-rift/nova-rift.webp',
+    'Fly through a collapsing galaxy, dodge debris and rescue stranded crew members.'],
+  ['Web Ninja',         'action',     '🥷', 4.1, false,
+    '/games/web-ninja/index.html',
+    '/games/web-ninja/web-ninja.webp',
+    'Slice your way through cyber-enemies with precision ninja moves and combos.'],
 
-raw.push(['Plinker', 'skill', '🔵', 4.6, 'Frank Force', '0', true,
-  'Drop chips down the pegs and land them in the big-score slots. Simple, bouncy and hard to put down.']);
-EMBEDS['plinker'] = '/games/plinko/games/plinko.html';
+  // ── Skill ────────────────────────────────────────────────────────────────────
+  ['Plinker',           'skill',      '🔵', 4.6, true,
+    '/games/plinko/games/plinko.html',
+    '/games/plinko/plinker.webp',
+    'Drop chips down the pegs and land them in the big-score slots. Simple, bouncy and hard to put down.'],
+  ['Jumpman',           'skill',      '🍄', 4.5, true,
+    '/games/jumpman/games/jumpman.html',
+    '/games/jumpman/jumpman.webp',
+    'Run, jump and stomp through a bright side-scrolling world of blocks, coins and enemies.'],
+  ['Floppy Bird',       'skill',      '🐦', 4.4, false,
+    '/games/floppy-bird/games/floppyBird.html',
+    '/games/floppy-bird/floppy-bird.webp',
+    'Tap to keep your bird aloft and fly through the gaps without touching the pipes.'],
+  ['Moon Lander',       'skill',      '🌙', 4.3, false,
+    '/games/moon-lander/games/moonLander.html',
+    '/games/moon-lander/moon-lander.webp',
+    'Guide your lunar module to a soft landing. Balance thrust and gravity or crash trying.'],
+  ['Pegball',           'skill',      '⚪', 4.3, false,
+    '/games/pegball/games/pegball.html',
+    '/games/pegball/pegball.webp',
+    'Aim your ball to bounce between pegs, clear rows and rack up the highest score.'],
+  ['Pillars',           'skill',      '🏛️', 4.2, false,
+    '/games/pillars/games/pillars.html',
+    '/games/pillars/pillars.webp',
+    'Stack blocks with perfect timing. Keep the tower balanced as it climbs higher.'],
+  ['Pitch Duel',        'skill',      '⚾', 4.2, false,
+    '/games/pitch-duel/index.html',
+    '/games/pitch-duel/pitch-duel.webp',
+    'Go head-to-head in a fast-paced pitching duel. Read the batter and throw the perfect pitch.'],
 
-raw.push(["Saurabh's Sprint", 'action', '🏃', 4.6, 'PlayGrid', '0', false,
-  'A 3D endless runner: dodge trains, grab coins, outrun the police and unlock new heroes and hoverboards.']);
-EMBEDS['saurabh-s-sprint'] = '/games/saurabhs-sprint/index.html';
+  // ── Sports ───────────────────────────────────────────────────────────────────
+  ['Pool',              'sports',     '🎱', 4.6, true,
+    '/games/pool/games/pool.html',
+    '/games/pool/pool.webp',
+    'Line up the cue, set your power and sink all fifteen balls in as few shots as you can.'],
+  ['Mini Golf',         'sports',     '⛳', 4.5, true,
+    '/games/mini-golf/games/miniGolf.html',
+    '/games/mini-golf/mini-golf.webp',
+    'Putt through creative obstacle courses. Find the trick shot that gets you a hole-in-one.'],
+  ['Pinball',           'sports',     '🔮', 4.4, false,
+    '/games/pinball/games/pinball.html',
+    '/games/pinball/pinball.webp',
+    'Classic pinball action with multiball, ramps and bumpers. Chase the high score.'],
+  ['Home Run Derby',    'sports',     '⚾', 4.4, false,
+    '/games/home-run-derby/games/homerDerby.html',
+    '/games/home-run-derby/home-run-derby.webp',
+    'Step up to the plate and blast as many home runs as you can before time runs out.'],
+  ['Hoops 88',          'sports',     '🏀', 4.3, false,
+    '/games/hoops88/index.html',
+    '/games/hoops88/hoops88.webp',
+    'Old-school basketball arcade: time your shots, chain baskets and beat the buzzer.'],
+  ['Free Throw',        'sports',     '🏀', 4.2, false,
+    '/games/free-throw/games/freeThrow.html',
+    '/games/free-throw/free-throw.webp',
+    'Step to the line and sink free throws under pressure. Perfect your arc and release.'],
 
-raw.push(['Pool', 'sports', '🎱', 4.6, 'PlayGrid', '0', false, 'Line up the cue, set your power and sink all fifteen balls in as few shots as you can.']);
-EMBEDS['pool'] = '/games/pool/games/pool.html';
+  // ── Puzzle ───────────────────────────────────────────────────────────────────
+  ['FreeCell Solitaire','puzzle',     '🃏', 4.6, true,
+    '/games/freecell/games/freecell.html',
+    '/games/freecell/freecell.webp',
+    'The classic card puzzle: move every card to its home pile using four free cells and a little planning.'],
+  ['Chess',             'puzzle',     '♟️', 4.7, true,
+    '/games/chess/games/chess.html',
+    '/games/chess/chess.webp',
+    'Full chess against a smart AI opponent. Choose your difficulty and play the timeless strategy game.'],
+  ['2048',              'puzzle',     '🔢', 4.5, true,
+    '/games/2048/games/2048.html',
+    '/games/2048/2048.webp',
+    'Slide tiles to merge matching numbers. Reach the 2048 tile — then keep going.'],
+  ['Wordly',            'puzzle',     '📝', 4.5, false,
+    '/games/wordly/games/wordly.html',
+    '/games/wordly/wordly.webp',
+    'Guess the hidden word in six tries. Each guess tells you which letters are right and where.'],
+  ['Minesweeper',       'puzzle',     '💣', 4.4, false,
+    '/games/minesweeper/games/minesweeper.html',
+    '/games/minesweeper/minesweeper.webp',
+    'Clear the minefield using logic. Flag the bombs, reveal the safe squares, survive.'],
+  ['Sudoku',            'puzzle',     '🔢', 4.4, false,
+    '/games/sudoku/games/sudoku.html',
+    '/games/sudoku/sudoku.webp',
+    'Fill the 9×9 grid so every row, column and box contains the digits 1–9 exactly once.'],
+  ['Match 3',           'puzzle',     '💎', 4.3, false,
+    '/games/match-3/games/matchThree.html',
+    '/games/match-3/match-3.webp',
+    'Swap gems to make rows of three or more. Chain combos for big scores.'],
+  ['Brickout',          'puzzle',     '🧱', 4.3, false,
+    '/games/brickout/games/brickout.html',
+    '/games/brickout/brickout.webp',
+    'Break every brick with the bouncing ball. Power-ups drop from the blocks to help you.'],
+  ['Crate Pusher',      'puzzle',     '📦', 4.2, false,
+    '/games/crate-pusher/games/sokoban.html',
+    '/games/crate-pusher/crate-pusher.webp',
+    'Push every crate onto its target square. Classic Sokoban logic — easy to learn, hard to master.'],
+  ['Capture Go',        'puzzle',     '⚫', 4.2, false,
+    '/games/capture-go/games/captureGo.html',
+    '/games/capture-go/capture-go.webp',
+    'A beginner-friendly version of Go. Capture five of your opponent\'s stones to win.'],
 
-raw.push(['Jumpman', 'adventure', '🍄', 4.5, 'PlayGrid', '0', false, 'Run, jump and stomp through a bright side-scrolling world of blocks, coins and enemies.']);
-EMBEDS['jumpman'] = '/games/jumpman/games/jumpman.html';
+  // ── Two Player ───────────────────────────────────────────────────────────────
+  ['Checkers',          'two-player', '🔴', 4.4, false,
+    '/games/checkers/games/checkers.html',
+    '/games/checkers/checkers.webp',
+    'Classic checkers on an 8×8 board. Jump your opponent\'s pieces and king your way to victory.'],
+  ['Reversi',           'two-player', '⚫', 4.3, false,
+    '/games/reversi/games/reversi.html',
+    '/games/reversi/reversi.webp',
+    'Flip your opponent\'s discs to your colour. Control the board by the final move.'],
+  ['Dominoes',          'two-player', '🁣', 4.3, false,
+    '/games/dominoes/games/dominoes.html',
+    '/games/dominoes/dominoes.webp',
+    'Match tiles, block your opponent and be the first to clear your hand.'],
+  ['Drop Four',         'two-player', '🔵', 4.3, false,
+    '/games/drop-four/games/connect4.html',
+    '/games/drop-four/drop-four.webp',
+    'Drop your discs to connect four in a row — horizontally, vertically or diagonally.'],
+  ['Go',                'two-player', '🪨', 4.2, false,
+    '/games/go/games/go.html',
+    '/games/go/go.webp',
+    'The ancient strategy game of territory. Surround your opponent\'s stones to capture them.'],
 
-raw.push(['FreeCell Solitaire', 'puzzle', '🃏', 4.6, 'PlayGrid', '0', false, 'The classic card puzzle: move every card to its home pile using four free cells and a little planning.']);
-EMBEDS['freecell-solitaire'] = '/games/freecell/games/freecell.html';
+  // ── Cozy / Card ──────────────────────────────────────────────────────────────
+  ['Solitaire',         'cozy',       '🃏', 4.5, false,
+    '/games/solitaire/index.html',
+    '/games/solitaire/solitaire.webp',
+    'Classic Klondike solitaire. Sort all cards to the foundations, one suit at a time.'],
+  ['Mono',              'cozy',       '🎴', 4.3, false,
+    '/games/mono/index.html',
+    '/games/mono/mono.webp',
+    'A relaxed card game inspired by Uno. Match colours and numbers to empty your hand.'],
+  ['Kabinate',          'cozy',       '🗂️', 4.2, false,
+    '/games/kabinate/index.html',
+    '/games/kabinate/kabinate.webp',
+    'Sort and organise items into the right cabinets before the timer runs out.'],
 
-const THUMBS = {};
+  // ── Adventure ────────────────────────────────────────────────────────────────
+  ['Snake',             'adventure',  '🐍', 4.4, false,
+    '/games/snake/games/snake.html',
+    '/games/snake/snake.webp',
+    'Eat the food, grow longer and don\'t bite your own tail. How long can your snake get?'],
+];
 
-THUMBS['kart-royale'] = '/games/kart-royale/kart-royale.webp';
-THUMBS['plinker'] = '/games/plinko/plinker.webp';
-THUMBS['saurabh-s-sprint'] = '/games/saurabhs-sprint/saurabhs-sprint.webp';
-THUMBS['pool'] = '/games/pool/pool.webp';
-THUMBS['jumpman'] = '/games/jumpman/jumpman.webp';
-THUMBS['freecell-solitaire'] = '/games/freecell/freecell.webp';
-
-export const GAMES = raw.map(([title, category, glyph, rating, developer, plays, featured, blurb], i) => ({
+export const GAMES = RAW.map(([title, category, glyph, rating, featured, embedUrl, thumb, blurb], i) => ({
   id: i + 1,
   slug: slugify(title),
   title,
@@ -93,14 +218,12 @@ export const GAMES = raw.map(([title, category, glyph, rating, developer, plays,
   glyph,
   rating,
   developer: 'PlayGrid',
-  plays,
+  plays: '0',
   featured,
   blurb,
   gradient: PALETTES[i % PALETTES.length],
-  // Bundled mini-game now; swap for your licensed provider's iframe URL later.
-  embedUrl: EMBEDS[slugify(title)] || null,
-  // Licensed thumbnail URL from your provider feed (GamePix: thumbnailUrl)
-  thumb: THUMBS[slugify(title)] !== undefined ? THUMBS[slugify(title)] : '/thumbs/' + slugify(title) + '.webp',
+  embedUrl,
+  thumb,
 }));
 
 export const getGame = (slug) => GAMES.find((g) => g.slug === slug);

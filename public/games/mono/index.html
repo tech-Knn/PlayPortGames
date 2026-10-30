@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mono</title>
+<link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+<link rel="stylesheet" href="./styles.css" />
+<link rel="stylesheet" href="./room.css" />
+<script>
+if (localStorage.getItem("sound") == null) {
+        localStorage.setItem("sound", 0);
+      }
+      if (localStorage.getItem("music") == null) {
+        localStorage.setItem("music", 0);
+      }
+      document.addEventListener("DOMContentLoaded", function () {
+        change_sound(true);
+        change_music(true);
+      });
+
+      function toggle_fullscreen() {
+        let fullscreen_button = document.getElementById("fullscreen_button");
+        if (document.fullscreenElement) {
+          document.exitFullscreen();
+          fullscreen_button.innerHTML = `<img src="./options/fullscreen_off.svg" alt="fullscreen toggle" title="fullscreen toggle" draggable="false">`;
+        } else {
+          document.documentElement.requestFullscreen();
+          fullscreen_button.innerHTML = `<img src="./options/fullscreen_on.svg" alt="fullscreen toggle" title="fullscreen toggle" draggable="false">`;
+        }
+      }
+
+      function change_sound(start = false) {
+        let sound_button = document.getElementById("sound_button");
+        let condition = start
+          ? localStorage.getItem("sound") == 0
+          : localStorage.getItem("sound") != 0;
+        if (condition) {
+          localStorage.setItem("sound", 0);
+          sound_button.innerHTML = `<img src="./options/sound_off.svg" alt="sound toggle" title="sound toggle" draggable="false">`;
+        } else {
+          localStorage.setItem("sound", 1);
+          sound_button.innerHTML = `<img src="./options/sound_on.svg" alt="sound toggle" title="sound toggle" draggable="false">`;
+        }
+      }
+
+      function change_music(start = false) {
+        let music_button = document.getElementById("music_button");
+        let music = document.getElementById("music");
+        let condition = start
+          ? localStorage.getItem("music") == 0
+          : localStorage.getItem("music") != 0;
+        if (condition) {
+          localStorage.setItem("music", 0);
+          music.muted = true;
+          music_button.innerHTML = `<img src="./options/music_off.svg" alt="music toggle" title="music toggle" draggable="false">`;
+        } else {
+          localStorage.setItem("music", 1);
+          if (start) {
+            document.addEventListener(
+              "click",
+              function () {
+                music.play();
+              },
+              { once: true },
+            );
+          } else {
+            music.play();
+          }
+          music.muted = false;
+          music_button.innerHTML = `<img src="./options/music_on.svg" alt="music toggle" title="music toggle" draggable="false">`;
+        }
+      }
+    </script>
+</head>
+<body>
+<audio id="music" src="./audio/music.mp3" loop preload="auto"></audio>
+<div class="wrapper">
+
+
+<div style="display: none">
+<img src="./cards/b0.svg" />
+<img src="./cards/b1.svg" />
+<img src="./cards/b2.svg" />
+<img src="./cards/b3.svg" />
+<img src="./cards/b4.svg" />
+<img src="./cards/b5.svg" />
+<img src="./cards/b6.svg" />
+<img src="./cards/b7.svg" />
+<img src="./cards/b8.svg" />
+<img src="./cards/b9.svg" />
+<img src="./cards/bp.svg" />
+<img src="./cards/br.svg" />
+<img src="./cards/bs.svg" />
+<img src="./cards/card_back.svg" />
+<img src="./cards/card_back2.svg" />
+<img src="./cards/g0.svg" />
+<img src="./cards/g1.svg" />
+<img src="./cards/g2.svg" />
+<img src="./cards/g3.svg" />
+<img src="./cards/g4.svg" />
+<img src="./cards/g5.svg" />
+<img src="./cards/g6.svg" />
+<img src="./cards/g7.svg" />
+<img src="./cards/g8.svg" />
+<img src="./cards/g9.svg" />
+<img src="./cards/gp.svg" />
+<img src="./cards/gr.svg" />
+<img src="./cards/gs.svg" />
+<img src="./cards/r0.svg" />
+<img src="./cards/r1.svg" />
+<img src="./cards/r2.svg" />
+<img src="./cards/r3.svg" />
+<img src="./cards/r4.svg" />
+<img src="./cards/r5.svg" />
+<img src="./cards/r6.svg" />
+<img src="./cards/r7.svg" />
+<img src="./cards/r8.svg" />
+<img src="./cards/r9.svg" />
+<img src="./cards/rp.svg" />
+<img src="./cards/rr.svg" />
+<img src="./cards/rs.svg" />
+<img src="./cards/sc.svg" />
+<img src="./cards/scb.svg" />
+<img src="./cards/scg.svg" />
+<img src="./cards/scr.svg" />
+<img src="./cards/scy.svg" />
+<img src="./cards/sp.svg" />
+<img src="./cards/spb.svg" />
+<img src="./cards/spg.svg" />
+<img src="./cards/spr.svg" />
+<img src="./cards/spy.svg" />
+<img src="./cards/y0.svg" />
+<img src="./cards/y1.svg" />
+<img src="./cards/y2.svg" />
+<img src="./cards/y3.svg" />
+<img src="./cards/y4.svg" />
+<img src="./cards/y5.svg" />
+<img src="./cards/y6.svg" />
+<img src="./cards/y7.svg" />
+<img src="./cards/y8.svg" />
+<img src="./cards/y9.svg" />
+<img src="./cards/yp.svg" />
+<img src="./cards/yr.svg" />
+<img src="./cards/ys.svg" />
+</div>
+
+<button id="wait_screen_button" onclick="update_wait_screen(true)">-</button>
+<div id="wait_screen" onclick="if (event.target == this) (update_wait_screen(true))">
+    <div id="wait_screen_div">
+        <div id="options">
+            <button id="fullscreen_button" onclick="toggle_fullscreen()">
+                <img
+                    src="./options/fullscreen_off.svg"
+                    alt="fullscreen toggle"
+                    title="fullscreen toggle"
+                    draggable="false"
+                />
+            </button>
+            <button id="music_button" onclick="change_music();">
+                <img src="./options/music_off.svg" alt="music toggle" title="music toggle" draggable="false" />
+            </button>
+            <button id="sound_button" onclick="change_sound();">
+                <img src="./options/sound_off.svg" alt="sound toggle" title="sound toggle" draggable="false" />
+            </button>
+        </div>
+        <span id="room_name">Mono</span>
+        <div id="wait_screen_decriptors"><span>Players</span><span>Wins</span></div>
+        <div id="wait_screen_players"></div>
+        <div id="wait_screen_buttons">
+            <button id="ready_button" onclick="socket.emit(`player_ready`);">Ready</button>
+        </div>
+    </div>
+</div>
+
+<div id="remdiv" style="width: 1rem; height: 0"></div>
+<button id="deck" onclick="deck()"></button>
+<img id="arrows" src="./arrows.webp" style="display: none" draggable="false" />
+<img id="skip" src="./skip.svg" class="appear" style="display: none" draggable="false" />
+<img id="arrow" src="./arrow.svg" class="appear" style="display: none" draggable="false" />
+<img id="reverse" src="./reverse.svg" class="appear" style="display: none" draggable="false" />
+<div id="plus_display"></div>
+<div id="discard_pile"></div>
+<div id="color_picker" style="display: none">
+    <div>
+        <button class="r" onclick="socket.emit('color_picker', 'r');"></button>
+        <button class="g" onclick="socket.emit('color_picker', 'g');"></button>
+        <button class="y" onclick="socket.emit('color_picker', 'y');"></button>
+        <button class="b" onclick="socket.emit('color_picker', 'b');"></button>
+    </div>
+</div>
+
+<div id="player_0">
+    <div id="nameplate_0" class="nameplate">
+        <span id="card_num_0"></span>
+    </div>
+    <div id="hand_0"></div>
+</div>
+
+<div id="player_1">
+    <div></div>
+    <div id="hand_1"></div>
+    <div id="nameplate_1" class="nameplate">
+        <span id="card_num_1"></span>
+    </div>
+</div>
+
+<div id="player_2">
+    <div></div>
+    <div id="nameplate_2" class="nameplate">
+        <span id="card_num_2"></span>
+    </div>
+    <div id="hand_2"></div>
+</div>
+
+<div id="player_3">
+    <div></div>
+    <div id="nameplate_3" class="nameplate">
+        <span id="card_num_3"></span>
+    </div>
+    <div id="hand_3"></div>
+</div>
+
+</div>
+<script src="./js/mono-engine.js"></script>
+<script src="./js/local-socket.js"></script>
+<script src="./js/room.js"></script>
+</body>
+</html>

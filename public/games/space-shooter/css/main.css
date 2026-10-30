@@ -1,0 +1,4 @@
+html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #000; }
+h1.error { position: absolute; top: 50%; left: 100px; z-index: -1; color: #fff; font-family: sans-serif; }
+section#gameSection { overflow: hidden; }
+#gameCanvas { cursor: crosshair; position: absolute; top: 0; left: 0; }

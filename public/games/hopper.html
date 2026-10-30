@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sky Hopper</title>
+<style>
+  html,body{margin:0;height:100%;background:#191537;display:grid;place-items:center;font-family:system-ui,sans-serif}
+  canvas{max-width:96vw;max-height:96vh;border-radius:14px;touch-action:none;background:linear-gradient(#241e4e,#191537)}
+</style>
+</head>
+<body>
+<canvas id="c" width="480" height="640"></canvas>
+<script>
+(function(){
+  var P = new URLSearchParams(location.search);
+  var GLYPH = P.get('e') || '☁️';
+  var ACCENT = P.get('c') || '#6C3BFF';
+  var cv = document.getElementById('c');
+  var x = cv.getContext('2d');
+  var W = cv.width, H = cv.height;
+  var BX = 120, R = 18, GRAV = 0.42, FLAP = -7.4;
+  var GAP = 175, PW = 64, SPEED = 2.6;
+  var by, vy, pipes, score, best = 0, dead, started, frame;
+
+  function reset(){
+    by = H/2; vy = 0; pipes = []; score = 0; dead = false; started = false; frame = 0;
+  }
+
+  function flap(){
+    if (dead) { reset(); return; }
+    if (!started) started = true;
+    vy = FLAP;
+  }
+
+  function update(){
+    if (started && !dead){
+      frame++;
+      vy += GRAV; by += vy;
+      if (frame % 95 === 1){
+        var top = 60 + Math.random() * (H - GAP - 200);
+        pipes.push({ px: W + PW, top: top, passed: false });
+      }
+      for (var i = pipes.length - 1; i >= 0; i--){
+        var p = pipes[i];
+        p.px -= SPEED;
+        if (!p.passed && p.px + PW < BX - R){ p.passed = true; score++; }
+        if (p.px + PW < -10) pipes.splice(i, 1);
+        var inX = BX + R > p.px && BX - R < p.px + PW;
+        var inGap = by - R > p.top && by + R < p.top + GAP;
+        if (inX && !inGap) die();
+      }
+      if (by + R > H - 8 || by - R < 0) die();
+    }
+    draw();
+    requestAnimationFrame(update);
+  }
+
+  function die(){
+    dead = true;
+    if (score > best) best = score;
+  }
+
+  function draw(){
+    x.clearRect(0, 0, W, H);
+    // ground strip
+    x.fillStyle = 'rgba(255,255,255,0.08)';
+    x.fillRect(0, H - 8, W, 8);
+    // pipes
+    x.fillStyle = ACCENT;
+    for (var i = 0; i < pipes.length; i++){
+      var p = pipes[i];
+      rr(p.px, -10, PW, p.top + 10, 10);
+      rr(p.px, p.top + GAP, PW, H - p.top - GAP - 8, 10);
+    }
+    // player
+    x.font = '36px serif';
+    x.textAlign = 'center';
+    x.textBaseline = 'middle';
+    x.save();
+    x.translate(BX, by);
+    x.rotate(Math.max(-0.5, Math.min(0.6, vy * 0.06)));
+    x.fillText(GLYPH, 0, 0);
+    x.restore();
+    // score
+    x.fillStyle = '#fff';
+    x.font = 'bold 34px system-ui,sans-serif';
+    x.fillText(String(score), W/2, 52);
+    if (!started || dead){
+      x.fillStyle = 'rgba(20,14,50,0.72)';
+      x.fillRect(0, 0, W, H);
+      x.fillStyle = '#fff';
+      x.font = 'bold 26px system-ui,sans-serif';
+      x.fillText(dead ? 'Ouch! Score: ' + score + '  (best ' + best + ')' : 'Tap / Space to fly', W/2, H/2 - 16);
+      x.font = '16px system-ui,sans-serif';
+      x.fillStyle = 'rgba(255,255,255,0.7)';
+      x.fillText(dead ? 'Tap to try again' : 'Slip through the gaps', W/2, H/2 + 18);
+    }
+  }
+
+  function rr(px, py, w, h, r){
+    x.beginPath();
+    x.moveTo(px + r, py);
+    x.arcTo(px + w, py, px + w, py + h, r);
+    x.arcTo(px + w, py + h, px, py + h, r);
+    x.arcTo(px, py + h, px, py, r);
+    x.arcTo(px, py, px + w, py, r);
+    x.fill();
+  }
+
+  cv.addEventListener('pointerdown', function(e){ e.preventDefault(); flap(); });
+  window.addEventListener('keydown', function(e){
+    if (e.code === 'Space' || e.code === 'ArrowUp'){ e.preventDefault(); flap(); }
+  });
+
+  reset();
+  update();
+})();
+</script>
+</body>
+</html>

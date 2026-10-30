@@ -1,0 +1,5 @@
+Web Ninja - MIT License, (c) 2013 Jorge Palacios and contributors (see LICENSE).
+Engine: enchant.js v0.7.0 (MIT, Ubiquitous Entertainment Inc.), with the box2d.enchant.js plugin (MIT, kassy708).
+Physics: Box2dWeb 2.1.a.3 (zlib-style licence, see the header of Box2dWeb-2.1.a.3.js).
+Font: Caesar Dressing (SIL Open Font License 1.1, see fonts/OFL.txt).
+All pictures in images/ were drawn for Playport; the icons and textures of the original repository are not included.
