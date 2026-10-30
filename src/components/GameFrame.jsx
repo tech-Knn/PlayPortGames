@@ -5,7 +5,7 @@ import PlayLoader from './PlayLoader.jsx';
  * The game stage.
  *
  * Set `game.embedUrl` in src/data/games.js and the game loads straight
- * away inside the sandboxed iframe, covered by the PLAYPORT loader until
+ * away inside the sandboxed iframe, covered by the PLAYGRID loader until
  * it is ready.
  */
 export default function GameFrame({ game }) {

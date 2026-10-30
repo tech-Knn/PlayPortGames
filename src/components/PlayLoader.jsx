@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 
-const WORD = 'PLAYPORT';
+const WORD = 'PLAYGRID';
 const W = 720;
 const H = 180;
 const TOP = 28;      // top of the letters inside the viewBox
@@ -43,7 +43,7 @@ const DOTS = Array.from({ length: 16 }, (_, i) => ({
 }));
 
 /**
- * PLAYPORT intro + loading screen.
+ * PLAYGRID intro + loading screen.
  *   1. a dot pops, the letters tumble in and snap into the word
  *   2. the outline fills with a rainbow gradient (wavy waterline) + % counter
  *   3. a circular wipe reveals the game

@@ -4315,5 +4315,5 @@ input:checked + .slider:before {
   width: 100%;
 }
 
-/* Playport embed: hide the standalone-app install banner */
+/* PlayGrid embed: hide the standalone-app install banner */
 #pwa-install-container { display: none !important; }

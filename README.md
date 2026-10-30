@@ -1,4 +1,4 @@
-# Playport — a Poki-style game portal frontend (React + Vite)
+# PlayGrid — a Poki-style game portal frontend (React + Vite)
 
 A structural recreation of the poki.com UI pattern with **original branding**
 (name, colors, logo, and art are all new — no Poki assets or trademarks are

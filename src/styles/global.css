@@ -1129,7 +1129,7 @@ body::after {
   .card[aria-label="Play Nitro Rivals Racing"] { grid-column: span 2; }
 }
 
-/* ========= PLAYPORT intro + loading screen ========= */
+/* ========= PLAYGRID intro + loading screen ========= */
 .pl {
   position: absolute;
   inset: 0;
