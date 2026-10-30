@@ -12,7 +12,7 @@ export default function CategoryChips() {
             'btn-chip' + (isActive ? ' btn-chip--active' : '')
           }
         >
-          {c.emoji} {c.name}
+          {c.name}
         </NavLink>
       ))}
     </nav>

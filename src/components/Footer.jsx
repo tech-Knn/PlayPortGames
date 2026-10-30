@@ -1,50 +1,52 @@
 import { Link } from 'react-router-dom';
 import { CATEGORIES } from '../data/games.js';
+import Logo from './Logo.jsx';
 
 export default function Footer() {
   return (
     <footer className="footer">
       <div className="footer__inner">
         <div>
-          <div className="logo">
-            <span className="logo__tile" aria-hidden="true">▶</span>
-            <span>Playport</span>
-          </div>
+          <Logo />
           <p className="footer__tag">
-            Instant browser games. No downloads, no installs — just click and
+            Instant browser games — no downloads, no installs, just click and
             play on any device.
           </p>
         </div>
 
         <div>
-          <h3>Popular</h3>
+          <h3>Play</h3>
           <ul>
-            {CATEGORIES.slice(0, 5).map((c) => (
+            <li><Link to="/">All Games</Link></li>
+            {CATEGORIES.slice(0, 4).map((c) => (
               <li key={c.slug}>
-                <Link to={`/category/${c.slug}`}>{c.name} Games</Link>
+                <Link to={`/category/${c.slug}`}>{c.name}</Link>
               </li>
             ))}
           </ul>
         </div>
 
         <div>
-          <h3>Help &amp; support</h3>
+          <h3>Company</h3>
           <ul>
+            <li><Link to="/about">About Us</Link></li>
+            <li><Link to="/tutorials">Tutorials</Link></li>
+            <li><Link to="/faqs">FAQs</Link></li>
             <li><Link to="/contact">Contact</Link></li>
-            <li><Link to="/privacy">Privacy policy</Link></li>
-            <li><Link to="/terms">Terms of use</Link></li>
           </ul>
         </div>
 
         <div>
-          <h3>Company</h3>
+          <h3>Legal</h3>
           <ul>
-            <li><Link to="/about">About</Link></li>
+            <li><Link to="/privacy">Privacy Policy</Link></li>
+            <li><Link to="/terms">Terms of Use</Link></li>
           </ul>
         </div>
       </div>
+
       <div className="footer__legal">
-        © {new Date().getFullYear()} Playport. All rights reserved.
+        © {new Date().getFullYear()} PlayPort. All rights reserved. Made with ♥ in India.
       </div>
     </footer>
   );

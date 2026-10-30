@@ -6,7 +6,7 @@ import Home from './pages/Home.jsx';
 import Category from './pages/Category.jsx';
 import GamePage from './pages/GamePage.jsx';
 import SearchResults from './pages/SearchResults.jsx';
-import { About, Contact, Privacy, Terms } from './pages/InfoPages.jsx';
+import { About, Contact, Privacy, Terms, Tutorials, FAQs } from './pages/InfoPages.jsx';
 import NotFound from './pages/NotFound.jsx';
 
 export default function App() {
@@ -23,6 +23,8 @@ export default function App() {
             <Route path="/search" element={<SearchResults />} />
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
+            <Route path="/tutorials" element={<Tutorials />} />
+            <Route path="/faqs" element={<FAQs />} />
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/terms" element={<Terms />} />
             <Route path="*" element={<NotFound />} />
