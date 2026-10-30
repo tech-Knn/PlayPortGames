@@ -10,7 +10,7 @@ export function About() {
 
   const stats = [
     { value: '50K+', label: 'Players', bg: '#ff5d8f' },
-    { value: '6+',   label: 'Games',   bg: '#18c29c' },
+    { value: '45+',  label: 'Games',   bg: '#18c29c' },
     { value: '12',   label: 'Categories', bg: '#7c4dff' },
     { value: '0',    label: 'Downloads needed', bg: '#ffb938' },
   ];
