@@ -10,7 +10,7 @@ export default function SearchResults() {
   const results = searchGames(q);
 
   useEffect(() => {
-    document.title = q ? `"${q}" — Search | Playport` : 'Search — Playport';
+    document.title = q ? `"${q}" — Search | PlayGrid` : 'Search — PlayGrid';
   }, [q]);
 
   return (

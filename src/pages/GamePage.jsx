@@ -17,8 +17,8 @@ export default function GamePage() {
 
   useEffect(() => {
     document.title = game
-      ? `${game.title} — Play Online | Playport`
-      : 'Game not found — Playport';
+      ? `${game.title} — Play Online | PlayGrid`
+      : 'Game not found — PlayGrid';
     window.scrollTo(0, 0);
   }, [game]);
 

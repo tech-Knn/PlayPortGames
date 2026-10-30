@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 /* ─── About ─────────────────────────────────────────────── */
 export function About() {
   useEffect(() => {
-    document.title = 'About Us — PlayPort';
+    document.title = 'About Us — PlayGrid';
     window.scrollTo(0, 0);
   }, []);
 
@@ -19,7 +19,7 @@ export function About() {
     <main className="page">
       <div className="info-wrap">
         <p className="info-label">About us</p>
-        <h1 className="info-title">About PlayPort</h1>
+        <h1 className="info-title">About PlayGrid</h1>
         <p className="info-sub">
           Your instant portal to free browser gaming — no downloads, no installs,
           just click and play on any device, anywhere.
@@ -55,14 +55,14 @@ export function About() {
           <div className="whatwedo__card">
             <strong>Built in India 🇮🇳</strong>
             <p>
-              PlayPort is proudly made in India, bringing world-class browser
+              PlayGrid is proudly made in India, bringing world-class browser
               gaming to players everywhere at zero cost.
             </p>
           </div>
           <div className="whatwedo__card">
             <strong>Free, always</strong>
             <p>
-              Every game on PlayPort is completely free to play. No subscriptions,
+              Every game on PlayGrid is completely free to play. No subscriptions,
               no hidden costs, no paywalls — ever.
             </p>
           </div>
@@ -70,13 +70,13 @@ export function About() {
 
         <h2 className="info-h2">Our story</h2>
         <p className="info-body">
-          PlayPort started with a simple frustration: too many good games buried
-          behind app stores, downloads, and sign-up flows. We built PlayPort so
+          PlayGrid started with a simple frustration: too many good games buried
+          behind app stores, downloads, and sign-up flows. We built PlayGrid so
           that anyone with a browser can discover and play instantly — no friction,
           no fuss.
         </p>
         <p className="info-body">
-          PlayPort is operated from India. Have a question or want to get in touch?
+          PlayGrid is operated from India. Have a question or want to get in touch?
           Visit our <Link to="/contact" className="info-link">Contact page</Link>.
         </p>
       </div>
@@ -128,7 +128,7 @@ const TUTORIALS = [
 
 export function Tutorials() {
   useEffect(() => {
-    document.title = 'Tutorials — PlayPort';
+    document.title = 'Tutorials — PlayGrid';
     window.scrollTo(0, 0);
   }, []);
 
@@ -139,7 +139,7 @@ export function Tutorials() {
       <div className="info-banner">
         <h1 className="info-banner__title">Tutorials</h1>
         <p className="info-banner__sub">
-          Welcome to PlayPort Tutorials! Here you will find hints and tips about
+          Welcome to PlayGrid Tutorials! Here you will find hints and tips about
           all of our games.
         </p>
       </div>
@@ -185,20 +185,20 @@ export function Tutorials() {
 /* ─── FAQs ───────────────────────────────────────────────── */
 const FAQ_ITEMS = [
   {
-    q: 'Are PlayPort games free to play?',
-    a: 'Yes — every single game on PlayPort is 100% free. No subscriptions, no in-app purchases, no hidden charges. Ever.',
+    q: 'Are PlayGrid games free to play?',
+    a: 'Yes — every single game on PlayGrid is 100% free. No subscriptions, no in-app purchases, no hidden charges. Ever.',
   },
   {
     q: 'Do I need an account to play?',
-    a: 'No account needed. Open PlayPort, click any game thumbnail and you are playing within seconds.',
+    a: 'No account needed. Open PlayGrid, click any game thumbnail and you are playing within seconds.',
   },
   {
     q: 'Do I need to download or install anything?',
-    a: 'Nothing at all. PlayPort games run entirely in your web browser — no downloads, no plugins, no app store.',
+    a: 'Nothing at all. PlayGrid games run entirely in your web browser — no downloads, no plugins, no app store.',
   },
   {
-    q: 'What devices can I play PlayPort games on?',
-    a: 'PlayPort works on any device with a modern browser: desktop PCs, laptops, tablets, and smartphones — iOS and Android included.',
+    q: 'What devices can I play PlayGrid games on?',
+    a: 'PlayGrid works on any device with a modern browser: desktop PCs, laptops, tablets, and smartphones — iOS and Android included.',
   },
   {
     q: "What should I do if a game won't load or keeps freezing?",
@@ -209,7 +209,7 @@ const FAQ_ITEMS = [
     a: "Game progress is saved in your browser's local storage. It persists as long as you use the same browser on the same device and don't clear your browser data.",
   },
   {
-    q: 'Can I play PlayPort games on mobile?',
+    q: 'Can I play PlayGrid games on mobile?',
     a: 'Yes! Our games are built to work on mobile browsers. For the best experience on a phone, try landscape mode.',
   },
   {
@@ -246,7 +246,7 @@ function FAQItem({ q, a }) {
 
 export function FAQs() {
   useEffect(() => {
-    document.title = 'FAQs — PlayPort';
+    document.title = 'FAQs — PlayGrid';
     window.scrollTo(0, 0);
   }, []);
 
@@ -260,7 +260,7 @@ export function FAQs() {
         </p>
       </div>
 
-      <h2 className="faq-section-title">PlayPort Frequently Asked Questions</h2>
+      <h2 className="faq-section-title">PlayGrid Frequently Asked Questions</h2>
 
       <div className="faq-list" role="list">
         {FAQ_ITEMS.map((item) => (
@@ -282,7 +282,7 @@ export function Contact() {
   const [sent, setSent] = useState(false);
 
   useEffect(() => {
-    document.title = 'Contact — PlayPort';
+    document.title = 'Contact — PlayGrid';
     window.scrollTo(0, 0);
   }, []);
 
@@ -427,7 +427,7 @@ export function Contact() {
 /* ─── Privacy ────────────────────────────────────────────── */
 export function Privacy() {
   useEffect(() => {
-    document.title = 'Privacy Policy — PlayPort';
+    document.title = 'Privacy Policy — PlayGrid';
     window.scrollTo(0, 0);
   }, []);
 
@@ -439,14 +439,14 @@ export function Privacy() {
 
         <h2>What we collect</h2>
         <p>
-          PlayPort has no user accounts and does not ask for your name, email, or
+          PlayGrid has no user accounts and does not ask for your name, email, or
           any personal details to play. Game progress and high scores are stored
           locally in your own browser and never sent to us.
         </p>
 
         <h2>Advertising and third parties</h2>
         <p>
-          PlayPort is free because it shows advertising. Ads are served by
+          PlayGrid is free because it shows advertising. Ads are served by
           third-party partners (such as Google and our game-content partners),
           which may use cookies or similar identifiers to show relevant ads and
           measure performance. You can limit ad personalisation in your browser or
@@ -462,15 +462,15 @@ export function Privacy() {
 
         <h2>Children</h2>
         <p>
-          PlayPort is intended for general audiences. We do not knowingly collect
+          PlayGrid is intended for general audiences. We do not knowingly collect
           personal information from children under 13.
         </p>
 
         <h2>Contact</h2>
         <p>
           Privacy questions:{' '}
-          <a href="mailto:hello@playportgames.in" style={{ color: 'var(--amber)' }}>
-            hello@playportgames.in
+          <a href="mailto:hello@playgridgames.com" style={{ color: 'var(--amber)' }}>
+            hello@playgridgames.com
           </a>
         </p>
       </article>
@@ -481,7 +481,7 @@ export function Privacy() {
 /* ─── Terms ──────────────────────────────────────────────── */
 export function Terms() {
   useEffect(() => {
-    document.title = 'Terms of Use — PlayPort';
+    document.title = 'Terms of Use — PlayGrid';
     window.scrollTo(0, 0);
   }, []);
 
@@ -490,7 +490,7 @@ export function Terms() {
       <article className="infocard" style={{ marginTop: 24 }}>
         <h1>Terms of Use</h1>
         <p>
-          By using PlayPort you agree to these terms. Games are provided
+          By using PlayGrid you agree to these terms. Games are provided
           &ldquo;as is&rdquo; for personal, non-commercial entertainment.
           Don&rsquo;t copy, re-host, or resell the games or site content; titles
           from partner studios remain their property. We may change or remove
@@ -498,8 +498,8 @@ export function Terms() {
         </p>
         <p>
           Questions:{' '}
-          <a href="mailto:hello@playportgames.in" style={{ color: 'var(--amber)' }}>
-            hello@playportgames.in
+          <a href="mailto:hello@playgridgames.com" style={{ color: 'var(--amber)' }}>
+            hello@playgridgames.com
           </a>
         </p>
       </article>

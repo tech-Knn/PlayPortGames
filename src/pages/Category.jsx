@@ -11,8 +11,8 @@ export default function Category() {
 
   useEffect(() => {
     document.title = cat
-      ? `${cat.name} Games — Playport`
-      : 'Category not found — Playport';
+      ? `${cat.name} Games — PlayGrid`
+      : 'Category not found — PlayGrid';
   }, [cat]);
 
   if (!cat) {

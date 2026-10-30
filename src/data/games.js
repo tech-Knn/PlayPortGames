@@ -63,17 +63,17 @@ raw.push(['Plinker', 'skill', '🔵', 4.6, 'Frank Force', '0', true,
   'Drop chips down the pegs and land them in the big-score slots. Simple, bouncy and hard to put down.']);
 EMBEDS['plinker'] = '/games/plinko/games/plinko.html';
 
-raw.push(["Saurabh's Sprint", 'action', '🏃', 4.6, 'Playport', '0', false,
+raw.push(["Saurabh's Sprint", 'action', '🏃', 4.6, 'PlayGrid', '0', false,
   'A 3D endless runner: dodge trains, grab coins, outrun the police and unlock new heroes and hoverboards.']);
 EMBEDS['saurabh-s-sprint'] = '/games/saurabhs-sprint/index.html';
 
-raw.push(['Pool', 'sports', '🎱', 4.6, 'Playport', '0', false, 'Line up the cue, set your power and sink all fifteen balls in as few shots as you can.']);
+raw.push(['Pool', 'sports', '🎱', 4.6, 'PlayGrid', '0', false, 'Line up the cue, set your power and sink all fifteen balls in as few shots as you can.']);
 EMBEDS['pool'] = '/games/pool/games/pool.html';
 
-raw.push(['Jumpman', 'adventure', '🍄', 4.5, 'Playport', '0', false, 'Run, jump and stomp through a bright side-scrolling world of blocks, coins and enemies.']);
+raw.push(['Jumpman', 'adventure', '🍄', 4.5, 'PlayGrid', '0', false, 'Run, jump and stomp through a bright side-scrolling world of blocks, coins and enemies.']);
 EMBEDS['jumpman'] = '/games/jumpman/games/jumpman.html';
 
-raw.push(['FreeCell Solitaire', 'puzzle', '🃏', 4.6, 'Playport', '0', false, 'The classic card puzzle: move every card to its home pile using four free cells and a little planning.']);
+raw.push(['FreeCell Solitaire', 'puzzle', '🃏', 4.6, 'PlayGrid', '0', false, 'The classic card puzzle: move every card to its home pile using four free cells and a little planning.']);
 EMBEDS['freecell-solitaire'] = '/games/freecell/games/freecell.html';
 
 const THUMBS = {};
@@ -92,7 +92,7 @@ export const GAMES = raw.map(([title, category, glyph, rating, developer, plays,
   category,
   glyph,
   rating,
-  developer: 'Playport',
+  developer: 'PlayGrid',
   plays,
   featured,
   blurb,
