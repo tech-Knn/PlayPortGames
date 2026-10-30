@@ -46,7 +46,7 @@ export default function Footer() {
       </div>
 
       <div className="footer__legal">
-        © {new Date().getFullYear()} PlayGrid. All rights reserved. Made with ♥ in India.
+        © {new Date().getFullYear()} PlayGrid. All rights reserved.
       </div>
     </footer>
   );
