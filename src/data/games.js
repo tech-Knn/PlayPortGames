@@ -36,10 +36,6 @@ const RAW = [
     'A full 3D kart racer: drift through corners for boosts, grab item boxes and chase down your rivals on Sunset Bay Circuit.'],
 
   // ── Action ───────────────────────────────────────────────────────────────────
-  ["Saurabh's Sprint",  'action',     '🏃', 4.6, true,
-    '/games/saurabhs-sprint/index.html',
-    '/games/saurabhs-sprint/saurabhs-sprint.webp',
-    'A 3D endless runner: dodge trains, grab coins, outrun the police and unlock new heroes and hoverboards.'],
   ['Emoji Survivors',   'action',     '🧟', 4.5, true,
     '/games/emoji-survivors/games/emojiSurvivors.html',
     '/games/emoji-survivors/emoji-survivors.webp',
