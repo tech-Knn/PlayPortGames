@@ -9,6 +9,7 @@ const canPeek =
 export default function GameCard({ game, big = false, showBadge = false, index = 0 }) {
   const [from, to] = game.gradient;
   const [peek, setPeek] = useState(false);
+  const [imgErr, setImgErr] = useState(false);
   const timer = useRef(null);
 
   const demoSrc =
@@ -28,6 +29,8 @@ export default function GameCard({ game, big = false, showBadge = false, index =
 
   useEffect(() => () => clearTimeout(timer.current), []);
 
+  const showArt = !game.thumb || imgErr;
+
   return (
     <Link
       to={`/game/${game.slug}`}
@@ -39,9 +42,7 @@ export default function GameCard({ game, big = false, showBadge = false, index =
       onFocus={enter}
       onBlur={leave}
     >
-      {game.thumb ? (
-        <img className="card__img" src={game.thumb} alt="" loading="lazy" />
-      ) : (
+      {showArt ? (
         <div
           className="card__art"
           style={{ background: `linear-gradient(135deg, ${from}, ${to})` }}
@@ -49,6 +50,14 @@ export default function GameCard({ game, big = false, showBadge = false, index =
         >
           {game.glyph}
         </div>
+      ) : (
+        <img
+          className="card__img"
+          src={game.thumb}
+          alt=""
+          loading="lazy"
+          onError={() => setImgErr(true)}
+        />
       )}
       {peek && demoSrc && (
         <iframe

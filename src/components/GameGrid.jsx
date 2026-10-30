@@ -18,7 +18,7 @@ export function GameGrid({ games, allowBig = true }) {
 /** Single-row horizontal scroller ("Popular this week" style). */
 export function GameRail({ games }) {
   return (
-    <div className="rail">z
+    <div className="rail">
       {games.map((g, i) => (
         <GameCard key={g.id} game={g} index={i} />
       ))}
